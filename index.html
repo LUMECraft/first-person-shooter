@@ -1,0 +1,105 @@
+<title>LUME FPS</title>
+
+<style>
+	html,
+	body {
+		width: 100%;
+		height: 100%;
+		margin: 0;
+		padding: 0;
+		background: #222;
+		touch-action: none;
+	}
+</style>
+
+<lume-scene id="scene" perspective="800" webgl>
+	<lume-point-light position="200 -200 200" intensity="0.6" color="white"></lume-point-light>
+
+	<lume-ambient-light color="white" intensity="0.6"> </lume-ambient-light>
+
+	<!-- background -->
+	<lume-sphere
+		has="basic-material"
+		color="white"
+		sidedness="double"
+		texture="https://assets.codepen.io/191583/airplane-hanger-env-map.jpg"
+		size="4000"
+		mount-point="0.5 0.5 0.5"
+	></lume-sphere>
+
+	<lume-perspective-camera active position="0 0 0"></lume-perspective-camera>
+
+	<!-- rifle -->
+	<lume-node rotation="0 180 0" position="15 5 -15">
+		<!-- barrel -->
+		<lume-box size="4 4 100" color="gray" rotation="0 0 0" position="0 0 0">
+			<!-- tip -->
+			<!-- prettier-ignore -->
+			<lume-box size="1 3 1" color="gold" align-point="0.5 0 1" mount-point="0.5 1 1"></lume-box>
+
+			<lume-node id="explosion" visible="false" align-point="0.5 0.5 1">
+				<lume-sphere
+					has="basic-material"
+					opacity="0.5"
+					size="20 20 20"
+					color="yellow"
+					mount-point="0.5 0.5 0"
+				></lume-sphere>
+			</lume-node>
+
+			<lume-box
+				id="tracer"
+				visible="false"
+				has="basic-material"
+				opacity="0.6"
+				size="2 2 2000"
+				color="white"
+				align-point="0.5 0.5 1"
+				mount-point="0.5 0.5 0"
+			></lume-box>
+		</lume-box>
+		<!-- body -->
+		<lume-box size="4 10 60" color="gray" rotation="0 0 0" position="0 0 0"></lume-box>
+		<!-- handle -->
+		<lume-box size="4 20 6" color="brown" rotation="-35 0 0" position="0 6 -5"></lume-box>
+		<!-- stalk -->
+		<!-- prettier-ignore -->
+		<lume-box size="4 7 25" color="gray" rotation="8 0 0" position="0 0 0" mount-point="0 0 1" origin="0.5 0.5 1" ></lume-box>
+		<!-- prettier-ignore -->
+		<lume-box size="4 7 25" color="gray" rotation="-8 0 0" position="0 0 0" mount-point="0 0 1" origin="0.5 0.5 1" ></lume-box>
+		<!-- clip -->
+		<lume-box size="4 20 10" color="gray" rotation="35 0 0" position="0 5 30"></lume-box>
+	</lume-node>
+
+	<lume-node>
+		<lume-camera-rig
+			active
+			initial-distance="0"
+			max-distance="500"
+			min-distance="0"
+			min-polar-angle="-90"
+			max-polar-angle="90"
+			rotation="0 0 0"
+		></lume-camera-rig>
+	</lume-node>
+</lume-scene>
+
+<audio id="gunshot" src="./gunshot.mp3"></audio>
+
+<script src="https://unpkg.com/lume@0.3.0-alpha.8/dist/global.js"></script>
+<script>
+	// Define all the LUME elements with their default names.
+	LUME.useDefaultNames()
+
+	document.addEventListener('mousedown', () => {
+		gunshot.cloneNode().play()
+
+		if (Math.random() < 0.25) tracer.visible = true
+		explosion.visible = true
+
+		setTimeout(() => {
+			tracer.visible = false
+			explosion.visible = false
+		}, 100)
+	})
+</script>
