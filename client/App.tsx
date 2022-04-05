@@ -1,4 +1,16 @@
-import {Box, clamp, defineElements, Motor, Node, RenderTask, Scene, toRadians, XYZNumberValues} from 'lume'
+import {
+	Box,
+	clamp,
+	defineElements,
+	DirectionalLight,
+	Motor,
+	Node,
+	RenderTask,
+	Scene,
+	toRadians,
+	XYZNumberValues,
+	THREE,
+} from 'lume'
 // import {Tween, Easing} from '@tweenjs/tween.js'
 import {reactive, signal} from 'classy-solid'
 import {Constructor} from 'lowclass'
@@ -15,10 +27,15 @@ defineElements()
 @component
 @reactive
 export class App {
+	// PropTypes!: Props<this, 'foo'>
+
 	camRotation = new XYZNumberValues()
 	camPosition = new XYZNumberValues()
 
-	// PropTypes!: Props<this, 'foo'>
+	debug = false
+
+	light!: DirectionalLight
+	lightSize = 16000
 
 	scene!: Scene
 	gunshot!: HTMLAudioElement
@@ -47,7 +64,6 @@ export class App {
 			const onmove = (e: PointerEvent) => {
 				this.camRotation.y -= e.movementX * 0.1
 				this.camRotation.x = clamp(this.camRotation.x + e.movementY * 0.1, -90, 90)
-				this.camRotation = this.camRotation
 			}
 
 			this.scene.addEventListener('pointermove', onmove)
@@ -105,13 +121,35 @@ export class App {
 				keysDown[key] = false
 			})
 		}
+
+		if (this.debug) {
+			const helper = new THREE.DirectionalLightHelper(this.light.three, this.lightSize)
+			this.scene.three.add(helper)
+			Motor.addRenderTask(() => {
+				helper.update()
+			})
+		}
 	}
 
 	template() {
 		return (
 			<>
-				<lume-scene ref={this.scene} perspective="800" webgl>
-					<lume-point-light position="200 -200 200" intensity="0.6" color="white"></lume-point-light>
+				<lume-scene ref={this.scene} perspective="800" webgl shadowmap-type="pcfsoft">
+					<lume-directional-light
+						ref={this.light}
+						position="4000 -4000 4000"
+						intensity="0.6"
+						color="white"
+						shadow-map-width="4096"
+						shadow-map-height="4096"
+						shadow-camera-far="100000"
+						shadow-camera-top={this.lightSize / 2}
+						shadow-camera-right={this.lightSize / 2}
+						shadow-camera-bottom={-this.lightSize / 2}
+						shadow-camera-left={-this.lightSize / 2}
+					>
+						{this.debug && <lume-sphere color="yellow" size="100" mount-point="0.5 0.5 0.5"></lume-sphere>}
+					</lume-directional-light>
 
 					<lume-ambient-light color="white" intensity="0.6"></lume-ambient-light>
 
@@ -121,17 +159,23 @@ export class App {
 						color="white"
 						sidedness="double"
 						texture="https://assets.codepen.io/191583/airplane-hanger-env-map.jpg"
-						size="4000"
+						size="100000"
 						mount-point="0.5 0.5 0.5"
 					></lume-sphere>
 
-					<lume-plane color="brown" rotation="0 90 0"></lume-plane>
+					<lume-plane
+						color="brown"
+						rotation="90 0 0"
+						mount-point="0.5 0.5"
+						size="5000 5000"
+						position="0 300 0"
+					></lume-plane>
 
 					<lume-node
 						rotation={[0, this.camRotation.y]}
 						position={[this.camPosition.x, 0, this.camPosition.z]}
 					>
-						<lume-perspective-camera active rotation={[this.camRotation.x]}>
+						<lume-perspective-camera active rotation={[this.camRotation.x]} far="200000">
 							{/* <!-- rifle --> */}
 							<lume-node rotation="0 180 0" position="15 5 -15">
 								{/* <!-- barrel --> */}
