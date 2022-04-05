@@ -1,4 +1,4 @@
-import {Box, defineElements, Motor, Node, RenderTask, Scene, toRadians, XYZNumberValues} from 'lume'
+import {Box, clamp, defineElements, Motor, Node, RenderTask, Scene, toRadians, XYZNumberValues} from 'lume'
 // import {Tween, Easing} from '@tweenjs/tween.js'
 import {reactive, signal} from 'classy-solid'
 import {Constructor} from 'lowclass'
@@ -45,8 +45,8 @@ export class App {
 			this.scene.requestPointerLock()
 
 			const onmove = (e: PointerEvent) => {
-				this.camRotation.y += -e.movementX * 0.1
-				this.camRotation.x += e.movementY * 0.1
+				this.camRotation.y -= e.movementX * 0.1
+				this.camRotation.x = clamp(this.camRotation.x + e.movementY * 0.1, -90, 90)
 				this.camRotation = this.camRotation
 			}
 
@@ -124,6 +124,8 @@ export class App {
 						size="4000"
 						mount-point="0.5 0.5 0.5"
 					></lume-sphere>
+
+					<lume-plane color="brown" rotation="0 90 0"></lume-plane>
 
 					<lume-node
 						rotation={[0, this.camRotation.y]}
