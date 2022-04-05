@@ -1,4 +1,4 @@
-import {Box, defineElements, Node, Scene, XYZNumberValues} from 'lume'
+import {Box, defineElements, Motor, Node, RenderTask, Scene, XYZNumberValues} from 'lume'
 // import {Tween, Easing} from '@tweenjs/tween.js'
 import {reactive, signal} from 'classy-solid'
 import {Constructor} from 'lowclass'
@@ -15,7 +15,8 @@ defineElements()
 @component
 @reactive
 export class App {
-	@signal camRotation = new XYZNumberValues()
+	camRotation = new XYZNumberValues()
+	camPosition = new XYZNumberValues()
 
 	// PropTypes!: Props<this, 'foo'>
 
@@ -59,6 +60,33 @@ export class App {
 
 			// TODO handle failed pointer lock request :(
 		})
+
+		const keysDown = {w: false, a: false, s: false, d: false}
+
+		for (const key of ['w', 'a', 's', 'd'] as const) {
+			window.addEventListener('keydown', e => {
+				if (!document.pointerLockElement) return
+				if (key != e.key) return
+				if (keysDown[key]) return
+
+				keysDown[key] = true
+
+				let task: RenderTask
+
+				if (key === 'w') task = () => ((this.camPosition.z -= 10), keysDown[key])
+				if (key === 'a') task = () => ((this.camPosition.x -= 10), keysDown[key])
+				if (key === 's') task = () => ((this.camPosition.z += 10), keysDown[key])
+				if (key === 'd') task = () => ((this.camPosition.x += 10), keysDown[key])
+
+				Motor.addRenderTask(task)
+			})
+
+			window.addEventListener('keyup', e => {
+				if (!document.pointerLockElement) return
+				if (key != e.key) return
+				keysDown[key] = false
+			})
+		}
 	}
 
 	template() {
@@ -79,7 +107,10 @@ export class App {
 						mount-point="0.5 0.5 0.5"
 					></lume-sphere>
 
-					<lume-node rotation={[0, this.camRotation.y]}>
+					<lume-node
+						rotation={[0, this.camRotation.y]}
+						position={[this.camPosition.x, 0, this.camPosition.z]}
+					>
 						<lume-perspective-camera active rotation={[this.camRotation.x]}>
 							{/* <!-- rifle --> */}
 							<lume-node rotation="0 180 0" position="15 5 -15">
@@ -189,7 +220,7 @@ export function component<T extends Constructor>(
 	return (((props?: any): JSX.Element => {
 		const instance = new Class()
 
-		for (const prop of Class.signalProperties) {
+		for (const prop of Class.signalProperties ?? []) {
 			if (!(prop in props)) continue // need this? Can prop spread instroduce new props that we'll miss because of this?
 
 			createEffect(() => {
