@@ -1,0 +1,33 @@
+{
+	"name": "website",
+	"private": true,
+	"scripts": {
+		"start": "npm run _meteor -- -p 8765",
+		"build": "echo 'nothing to build for website'",
+		"dev": "npm run _meteor",
+		"_meteor": "meteor --exclude-archs web.browser.legacy",
+		"setup-website-service": "cd website && ./setup-service.sh",
+		"// LUME Scripts below ///////////////////////////////////////": "",
+		"typecheck": "lume typecheck",
+		"typecheck:watch": "lume typecheckWatch"
+	},
+	"dependencies": {
+		"@babel/runtime": "^7.15.4",
+		"@lume/element": "^0.6.0",
+		"@tweenjs/tween.js": "^18.6.4",
+		"classy-solid": "^0.1.0",
+		"lowclass": "^5.0.0",
+		"lume": "^0.3.0-alpha.9",
+		"meteor-node-stubs": "^1.0.0"
+	},
+	"devDependencies": {
+		"@babel/core": "^7.11.6",
+		"@babel/plugin-proposal-class-properties": "^7.10.4",
+		"@babel/plugin-proposal-decorators": "^7.10.5",
+		"@babel/plugin-proposal-nullish-coalescing-operator": "^7.10.4",
+		"@babel/plugin-proposal-optional-chaining": "^7.11.0",
+		"@lume/cli": "^0.4.1",
+		"babel-preset-solid": "^1.0.0",
+		"prettier": "^2.0.5"
+	}
+}

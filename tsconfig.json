@@ -1,0 +1,18 @@
+{
+	"extends": "./node_modules/@lume/cli/config/ts.config.json",
+	"compilerOptions": {
+		"checkJs": true,
+		// "declaration": false,
+		"rootDir": "./",
+		"jsxImportSource": "@lume/element"
+	},
+
+	"include": [
+		"client/**/*.js",
+		"client/**/*.ts",
+		"server/**/*.js",
+		"server/**/*.ts",
+		"imports/**/*.js",
+		"imports/**/*.ts"
+	]
+}
