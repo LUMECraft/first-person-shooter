@@ -17,6 +17,8 @@ export class FirstPersonCamera {
 	root!: Node
 
 	onMount() {
+		createEffect(() => (this.camPosition.y = this.crouchAmount))
+
 		createEffect(() => {
 			const scene = this.root.scene
 
@@ -103,10 +105,7 @@ export class FirstPersonCamera {
 			if (crouched) return
 
 			crouched = true
-
-			// FIXME this should trigger update, but for some reason we need to rotate the camera before it takes effect, so no crouch for now
-			// this.crouchAmount = 50
-			this.crouchAmount = 0
+			this.crouchAmount = 100
 		})
 
 		window.addEventListener('keyup', e => {
@@ -124,7 +123,7 @@ export class FirstPersonCamera {
 		<lume-node
 			ref={this.root}
 			rotation={[0, this.camRotation.y]}
-			position={[this.camPosition.x, this.camPosition.y + this.crouchAmount, this.camPosition.z]}
+			position={[this.camPosition.x, this.camPosition.y, this.camPosition.z]}
 		>
 			{/* <lume-camera-rig active rotation={[this.camRotation.x]}>
 				{props.children}
