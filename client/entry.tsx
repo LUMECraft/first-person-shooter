@@ -1,6 +1,5 @@
 import {render} from 'solid-js/web'
 import {App} from './App'
-import {createSignal} from 'classy-solid'
 
 let appName = 'LUMECraft First Person Shooter'
 Session.set('appTitle', appName)

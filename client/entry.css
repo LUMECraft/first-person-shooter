@@ -13,6 +13,10 @@ lume-scene {
 	position: absolute;
 }
 
+lume-node {
+	pointer-events: none;
+}
+
 .crosshair,
 .crosshair::before,
 .crosshair::after {
