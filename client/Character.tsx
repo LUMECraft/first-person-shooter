@@ -28,13 +28,13 @@ export class Character {
 
 	template = () => (
 		<lume-node ref={this.root} rotation="0 180 0" scale="0.48 0.48 0.48" {...this}>
-			<lume-node rotation="90 0 0">
-				<lume-3ds-model id="model" rotation="0 0 0" src="/ChuckChuck/head.3ds"></lume-3ds-model>
-				<lume-3ds-model id="model" rotation="0 0 0" src="/ChuckChuck/body.3ds"></lume-3ds-model>
-				<lume-3ds-model id="model" rotation="0 0 0" src="/ChuckChuck/left_arm.3ds"></lume-3ds-model>
-				<lume-3ds-model id="model" rotation="0 0 0" src="/ChuckChuck/right_arm.3ds"></lume-3ds-model>
-				<lume-3ds-model id="model" rotation="0 0 0" src="/ChuckChuck/left_leg.3ds"></lume-3ds-model>
-				<lume-3ds-model id="model" rotation="0 0 0" src="/ChuckChuck/right_leg.3ds"></lume-3ds-model>
+			<lume-node rotation="0 0 0">
+				<lume-fbx-model id="model" rotation="0 0 0" src="/ChuckChuck/head.fbx"></lume-fbx-model>
+				<lume-fbx-model id="model" rotation="0 0 0" src="/ChuckChuck/body.fbx"></lume-fbx-model>
+				<lume-fbx-model id="model" rotation="0 0 0" src="/ChuckChuck/left_arm.fbx"></lume-fbx-model>
+				<lume-fbx-model id="model" rotation="0 0 0" src="/ChuckChuck/right_arm.fbx"></lume-fbx-model>
+				<lume-fbx-model id="model" rotation="0 0 0" src="/ChuckChuck/left_leg.fbx"></lume-fbx-model>
+				<lume-fbx-model id="model" rotation="0 0 0" src="/ChuckChuck/right_leg.fbx"></lume-fbx-model>
 			</lume-node>
 		</lume-node>
 	)
