@@ -7,8 +7,9 @@ import {createEffect, onCleanup} from 'solid-js'
 @component
 @reactive
 export class FirstPersonCamera {
-	// PropTypes!: Props<this, never>
-	PropTypes!: Props<Node, keyof Node>
+	PropTypes!: Props<this, 'onPlayerMove'>
+
+	@signal onPlayerMove: ((pos: {x: number; y: number; z: number}) => void) | null = null
 
 	camRotation = new XYZNumberValues()
 	camPosition = new XYZNumberValues()
@@ -86,6 +87,9 @@ export class FirstPersonCamera {
 				Motor.addRenderTask((t, dt) => {
 					this.camPosition.z += nextPositionZ(dt)
 					this.camPosition.x += nextPositionY(dt)
+
+					this.onPlayerMove?.(this.camPosition)
+
 					return keysDown[key]
 				})
 			})

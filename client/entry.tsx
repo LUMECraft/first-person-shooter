@@ -1,15 +1,15 @@
+import {ReactiveVar} from 'meteor/reactive-var'
 import {render} from 'solid-js/web'
 import {App} from './App'
 
-let appName = 'LUMECraft First Person Shooter'
-Session.set('appTitle', appName)
+Meteor.subscribe('players')
 
-Tracker.autorun(() => {
-	document.title = Session.get('appTitle')
-})
+const title = new ReactiveVar('LUMECraft First Person Shooter')
+Tracker.autorun(() => (document.title = title.get()))
 
 main()
-function main() {
+
+async function main() {
 	const root = document.createElement('div')
 	root.id = 'root' // needed for styling
 	document.body.append(root)
