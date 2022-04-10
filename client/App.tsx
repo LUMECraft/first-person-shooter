@@ -1,5 +1,5 @@
 import {defineElements, Scene} from 'lume'
-import {createEffect, For, Index, onCleanup, Show} from 'solid-js'
+import {createEffect, Index, onCleanup, onMount, Show} from 'solid-js'
 import createThrottle from '@solid-primitives/throttle'
 import {Character} from './Character'
 import {Rifle} from './Rifle'
@@ -63,8 +63,8 @@ export class App {
 		})
 	}
 
-	onPlayerMove = createThrottle(({x, y, z}: {x: number; y: number; z: number}) => {
-		Meteor.call('updatePlayer', {id: this.playerId, x, y, z, crouch: this.player!.crouch})
+	onPlayerMove = createThrottle(({x, y, z, rx, ry}: {x: number; y: number; z: number; rx: number; ry: number}) => {
+		Meteor.call('updatePlayer', {id: this.playerId, x, y, z, rx, ry, crouch: this.player!.crouch})
 	}, 20) // TODO what's a good throttle value?
 
 	template() {
@@ -98,24 +98,55 @@ export class App {
 							{/* @ts-expect-error JSX type in classy-solid needs update */}
 							<FirstPersonCamera onPlayerMove={this.onPlayerMove[0]}>
 								<lume-node position="40 120 -100" slot="camera-child">
-									<Rifle />
+									<Rifle fireOnClick={true} />
 								</lume-node>
-								<lume-node position="0 320 0">
-									<Character />
+
+								<lume-node
+									position="0 320 0"
+									rotation="0 180 0"
+									scale="0.48 0.48 0.48"
+									slot="camera-child"
+								>
+									<lume-fbx-model
+										id="model"
+										rotation="0 0 0"
+										src="/ChuckChuck/head.fbx"
+									></lume-fbx-model>
 								</lume-node>
+
+								<Character />
 							</FirstPersonCamera>
 
 							<Index each={this.players}>
 								{player => {
 									if (player().id === this.playerId) return null
 									return (
-										<lume-node position={[player().x, player().y, player().z]}>
-											<lume-node position="40 120 -100">
-												<Rifle />
+										// The rotation/position attributes here are essentially duplicate of what <FirstPersonCamera> is doing.
+										// TODO: consolidate the duplication
+										<lume-node
+											rotation={[0, player().ry]}
+											position={[player().x, player().y, player().z]}
+										>
+											<lume-node rotation={[player().rx]}>
+												<lume-node position="40 120 -100">
+													<Rifle instance={i => (rifle = i)} />
+												</lume-node>
+
+												<lume-node
+													position="0 320 0"
+													rotation="0 180 0"
+													scale="0.48 0.48 0.48"
+													slot="camera-child"
+												>
+													<lume-fbx-model
+														id="model"
+														rotation="0 0 0"
+														src="/ChuckChuck/head.fbx"
+													></lume-fbx-model>
+												</lume-node>
 											</lume-node>
-											<lume-node position="0 320 0">
-												<Character />
-											</lume-node>
+
+											<Character />
 										</lume-node>
 									)
 								}}

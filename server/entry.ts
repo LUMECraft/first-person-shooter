@@ -1,4 +1,4 @@
-import {playersCollection} from '../imports/collections/players'
+import {Player, playersCollection} from '../imports/collections/players'
 
 // Session is undefined, https://forums.meteor.com/t/session-is-undefined/57829/2
 // import {Session} from 'meteor/session'
@@ -14,13 +14,22 @@ Meteor.methods({
 		playerId++
 		const id = playerId.toString()
 
-		const newPlayer = {
+		const newPlayer: Player = {
 			id,
 			health: 100,
+
+			// position
 			x: 0,
 			y: 0,
 			z: 0,
+
+			// look rotation
+			ry: 0,
+			rx: 0,
+
 			crouch: false,
+
+			// TODO if player is disconnected, set to false, and then UI should no longer render this player
 			connected: true,
 		}
 
@@ -29,8 +38,8 @@ Meteor.methods({
 		return id
 	},
 
-	updatePlayer({id, x, y, z, crouch}: {id: string; x: number; y: number; z: number; crouch: boolean}) {
-		playersCollection.update({id}, {$set: {x, y, z, crouch}})
+	updatePlayer({id, x, y, z, rx, ry, crouch}: Pick<Player, 'id' | 'x' | 'y' | 'z' | 'rx' | 'ry' | 'crouch'>) {
+		playersCollection.update({id}, {$set: {x, y, z, rx, ry, crouch}})
 	},
 })
 

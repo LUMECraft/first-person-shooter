@@ -1,48 +1,49 @@
-// import {reactive, signal} from 'classy-solid'
+import {reactive, signal} from 'classy-solid'
 import {component, Props} from 'classy-solid'
 import type {Box, Node} from 'lume'
 import {createMutable} from 'solid-js/store'
 import {createEffect, onCleanup} from 'solid-js'
 
 @component
-// @reactive
+@reactive
 export class Rifle {
-	// PropTypes!: Props<this, never>
-	PropTypes!: Props<Node, keyof Node>
+	PropTypes!: Props<this, 'fireOnClick'>
+
+	@signal fireOnClick = false
+
+	timeouts = new Set<number>()
 
 	onMount() {
 		createEffect(() => {
 			const scene = this.root.scene
 
-			if (!scene) return
-
-			let timeouts = new Set<number>()
-
-			const ondown = () => {
-				;(this.gunshot.cloneNode() as HTMLAudioElement).play()
-
-				if (Math.random() < 0.25) this.tracer.visible = true
-				this.explosion.visible = true
-
-				const timeout = window.setTimeout(() => {
-					this.tracer.visible = false
-					this.explosion.visible = false
-					timeouts.delete(timeout)
-				}, 100)
-
-				timeouts.add(timeout)
-			}
+			if (!scene || !this.fireOnClick) return
 
 			// TODO move to onmousedown={} prop inside JSX (currently doesn't work, bug?)
-			scene.addEventListener('mousedown', ondown)
+			scene.addEventListener('mousedown', this.fire)
 
 			onCleanup(() => {
-				scene.removeEventListener('mousedown', ondown)
-				for (const timeout of timeouts) clearTimeout(timeout)
+				scene.removeEventListener('mousedown', this.fire)
+				for (const timeout of this.timeouts) clearTimeout(timeout)
 				this.tracer.visible = false
 				this.explosion.visible = false
 			})
 		})
+	}
+
+	fire = () => {
+		;(this.gunshot.cloneNode() as HTMLAudioElement).play()
+
+		if (Math.random() < 0.25) this.tracer.visible = true
+		this.explosion.visible = true
+
+		const timeout = window.setTimeout(() => {
+			this.tracer.visible = false
+			this.explosion.visible = false
+			this.timeouts.delete(timeout)
+		}, 100)
+
+		this.timeouts.add(timeout)
 	}
 
 	constructor() {

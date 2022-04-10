@@ -10,7 +10,13 @@ import {render} from 'solid-js/web'
 export class FirstPersonCamera {
 	PropTypes!: Props<this, 'onPlayerMove'>
 
-	@signal onPlayerMove: ((pos: {x: number; y: number; z: number}) => void) | null = null
+	@signal onPlayerMove: ((pos: {x: number; y: number; z: number; rx: number; ry: number}) => void) | null = null
+
+	__playerMove() {
+		const {x, y, z} = this.camPosition
+		const {x: rx, y: ry} = this.camRotation
+		this.onPlayerMove?.({x, y, z, rx, ry})
+	}
 
 	camRotation = new XYZNumberValues()
 	camPosition = new XYZNumberValues()
@@ -32,6 +38,8 @@ export class FirstPersonCamera {
 			const onmove = (e: PointerEvent) => {
 				this.camRotation.y -= e.movementX * 0.1
 				this.camRotation.x = clamp(this.camRotation.x + e.movementY * 0.1, -90, 90)
+
+				this.__playerMove()
 			}
 
 			const onlockchange = () => {
@@ -89,7 +97,7 @@ export class FirstPersonCamera {
 					this.camPosition.z += nextPositionZ(dt)
 					this.camPosition.x += nextPositionY(dt)
 
-					this.onPlayerMove?.(this.camPosition)
+					this.__playerMove()
 
 					return keysDown[key]
 				})

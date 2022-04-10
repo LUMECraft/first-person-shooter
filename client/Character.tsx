@@ -12,13 +12,16 @@ export class Character {
 	root!: Node
 
 	onMount() {
-		this.root.three.traverse(n => {
-			if (n.material) {
-				console.log('modify material!')
-				// TODO attribute/prop for model loaders so we don't have to manually do this to Three.js objects here.
-				n.material.cashShadow = true
-				n.material.receiveShadow = true
-			}
+		this.root.on('GL_LOAD', () => {
+			this.root.three.traverse(n => {
+				if (n.material) {
+					// TODO this isn't firing.
+					// TODO attribute for model loaders so we don't have to manually do this to Three.js objects.
+					console.log('modify material!')
+					n.material.cashShadow = true
+					n.material.receiveShadow = true
+				}
+			})
 		})
 	}
 
@@ -27,9 +30,8 @@ export class Character {
 	}
 
 	template = () => (
-		<lume-node ref={this.root} rotation="0 180 0" scale="0.48 0.48 0.48" {...this}>
+		<lume-node ref={this.root} position="0 320 0" rotation="0 180 0" scale="0.48 0.48 0.48" {...this}>
 			<lume-node rotation="0 0 0">
-				<lume-fbx-model id="model" rotation="0 0 0" src="/ChuckChuck/head.fbx"></lume-fbx-model>
 				<lume-fbx-model id="model" rotation="0 0 0" src="/ChuckChuck/body.fbx"></lume-fbx-model>
 				<lume-fbx-model id="model" rotation="0 0 0" src="/ChuckChuck/left_arm.fbx"></lume-fbx-model>
 				<lume-fbx-model id="model" rotation="0 0 0" src="/ChuckChuck/right_arm.fbx"></lume-fbx-model>
