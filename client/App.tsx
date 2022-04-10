@@ -46,7 +46,6 @@ export class App {
 			Tracker.autorun(comp => {
 				computation = comp
 				this.player = playersCollection.findOne({id: this.playerId})
-				console.log('player changed')
 			})
 
 			onCleanup(() => computation.stop())
@@ -96,13 +95,11 @@ export class App {
 
 						{/* TODO better loading experience */}
 						<Show when={this.player} fallback={<lume-box size="200 200 200" color="pink"></lume-box>}>
-							<lume-node position="0 320 0">
-								<Character />
-							</lume-node>
-
 							{/* @ts-expect-error JSX type in classy-solid needs update */}
 							<FirstPersonCamera onPlayerMove={this.onPlayerMove[0]}>
-								<Rifle />
+								<lume-node position="40 120 -100" slot="camera-child">
+									<Rifle />
+								</lume-node>
 								<lume-node position="0 320 0">
 									<Character />
 								</lume-node>
@@ -113,7 +110,12 @@ export class App {
 									if (player().id === this.playerId) return null
 									return (
 										<lume-node position={[player().x, player().y, player().z]}>
-											<Character />
+											<lume-node position="40 120 -100">
+												<Rifle />
+											</lume-node>
+											<lume-node position="0 320 0">
+												<Character />
+											</lume-node>
 										</lume-node>
 									)
 								}}

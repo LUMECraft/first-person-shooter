@@ -2,7 +2,8 @@ import {reactive, signal} from 'classy-solid'
 import {component, Props} from 'classy-solid'
 import {clamp, Motor, Node, toRadians, XYZNumberValues} from 'lume'
 import {createMutable} from 'solid-js/store'
-import {createEffect, onCleanup} from 'solid-js'
+import {createEffect, onCleanup, JSX} from 'solid-js'
+import {render} from 'solid-js/web'
 
 @component
 @reactive
@@ -123,18 +124,64 @@ export class FirstPersonCamera {
 		return createMutable(this)
 	}
 
-	template = (props: this['PropTypes']) => (
-		<lume-node
-			ref={this.root}
-			rotation={[0, this.camRotation.y]}
-			position={[this.camPosition.x, this.camPosition.y, this.camPosition.z]}
-		>
-			{/* <lume-camera-rig active rotation={[this.camRotation.x]}>
+	template = (props: this['PropTypes']) => {
+		// const children = props.children
+
+		return (
+			<lume-node
+				ref={this.root}
+				rotation={[0, this.camRotation.y]}
+				position={[this.camPosition.x, this.camPosition.y, this.camPosition.z]}
+				use:shadow={
+					<>
+						<slot></slot>
+						<lume-perspective-camera active rotation={[this.camRotation.x]} far="200000" zoom={1}>
+							<slot name="camera-child"></slot>
+						</lume-perspective-camera>
+						{/* <lume-camera-rig active rotation={[this.camRotation.x]}>
+							<slot name="camera-child"></slot>
+						</lume-camera-rig> */}
+					</>
+				}
+			>
 				{props.children}
-			</lume-camera-rig> */}
-			<lume-perspective-camera slot="camera-child" active rotation={[this.camRotation.x]} far="200000">
-				{props.children}
-			</lume-perspective-camera>
-		</lume-node>
-	)
+			</lume-node>
+		)
+	}
+}
+
+async function shadow(el: Element, args: () => JSX.Element | [JSX.Element, ShadowRootInit] | true) {
+	const _args = args()
+	const [shadowChildren, shadowOptions = {mode: 'open'}] =
+		_args === true
+			? [() => <></>] // no args
+			: isShadowArgTuple(_args)
+			? _args
+			: [() => _args]
+
+	// Defer for one microtask so custom element upgrades can happen.
+	await Promise.resolve()
+
+	if (el.tagName.includes('-') && !customElements.get(el.tagName.toLowerCase())) {
+		await Promise.race([
+			new Promise<void>(resolve =>
+				setTimeout(() => {
+					console.warn(
+						'Custom element is not defined after 1 second, skipping. Overriden attachShadow methods may break if the element is defined later.',
+					)
+					resolve()
+				}, 1000),
+			),
+			customElements.whenDefined(el.tagName.toLowerCase()),
+		])
+	}
+
+	const root = el.attachShadow(shadowOptions)
+	// @ts-ignore :(
+	render(shadowChildren, root)
+}
+
+function isShadowArgTuple(a: any): a is [JSX.Element, ShadowRootInit] {
+	if (Array.isArray(a) && a.length === 2 && 'mode' in a[1]) return true
+	return false
 }

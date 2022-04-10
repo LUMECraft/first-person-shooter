@@ -31,6 +31,6 @@
 		"@lume/cli": "^0.4.1",
 		"@types/meteor": "^2.6.2",
 		"babel-preset-solid": "^1.0.0",
-		"prettier": "^2.0.5"
+		"prettier": "^2.6.2"
 	}
 }

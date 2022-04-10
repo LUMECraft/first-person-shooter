@@ -24,7 +24,7 @@ export class Rifle {
 				if (Math.random() < 0.25) this.tracer.visible = true
 				this.explosion.visible = true
 
-				const timeout = setTimeout(() => {
+				const timeout = window.setTimeout(() => {
 					this.tracer.visible = false
 					this.explosion.visible = false
 					timeouts.delete(timeout)
@@ -55,22 +55,21 @@ export class Rifle {
 	explosion!: Node
 
 	template = () => (
-		<lume-node ref={this.root} rotation="0 180 0" position="15 5 -15">
-			{/* <!-- barrel --> */}
-			<lume-box size="4 4 100" color="gray" rotation="0 0 0" position="0 0 0">
-				{/* <!-- tip --> */}
-				<lume-box size="1 3 1" color="gold" align-point="0.5 0 1" mount-point="0.5 1 1"></lume-box>
+		<lume-node ref={this.root} position="0 0 -40" scale="0.8 0.8 0.8">
+			{/* rifle model */}
+			<lume-fbx-model src="/gun.fbx" rotation="0 -90 0" scale="0.2 0.2 0.2"></lume-fbx-model>
 
+			<lume-node position="0 -105 -260">
 				{/* muzzle flash */}
-				<lume-node ref={this.explosion} visible="false" align-point="0.5 0.5 1">
-					<lume-sphere
-						has="basic-material"
-						opacity="0.5"
-						size="20 20 20"
-						color="yellow"
-						mount-point="0.5 0.5 0"
-					></lume-sphere>
-				</lume-node>
+				<lume-sphere
+					ref={this.explosion}
+					visible="false"
+					has="basic-material"
+					opacity="0.5"
+					size="50 50 50"
+					color="yellow"
+					mount-point="0.5 0.5 1"
+				></lume-sphere>
 
 				{/* bullet tracer */}
 				<lume-box
@@ -78,35 +77,11 @@ export class Rifle {
 					visible="false"
 					has="basic-material"
 					opacity="0.6"
-					size="2 2 8000"
+					size="15 15 8000"
 					color="white"
-					align-point="0.5 0.5 1"
-					mount-point="0.5 0.5 0"
+					mount-point="0.5 0.5 1"
 				></lume-box>
-			</lume-box>
-			{/* <!-- body --> */}
-			<lume-box size="4 10 60" color="gray" rotation="0 0 0" position="0 0 0"></lume-box>
-			{/* <!-- handle --> */}
-			<lume-box size="4 20 6" color="brown" rotation="-35 0 0" position="0 6 -5"></lume-box>
-			{/* <!-- stalk --> */}
-			<lume-box
-				size="4 7 25"
-				color="gray"
-				rotation="8 0 0"
-				position="0 0 0"
-				mount-point="0 0 1"
-				origin="0.5 0.5 1"
-			></lume-box>
-			<lume-box
-				size="4 7 25"
-				color="gray"
-				rotation="-8 0 0"
-				position="0 0 0"
-				mount-point="0 0 1"
-				origin="0.5 0.5 1"
-			></lume-box>
-			{/* <!-- clip --> */}
-			<lume-box size="4 20 10" color="gray" rotation="35 0 0" position="0 5 30"></lume-box>
+			</lume-node>
 
 			<audio ref={this.gunshot} src="/gunshot.mp3"></audio>
 		</lume-node>
