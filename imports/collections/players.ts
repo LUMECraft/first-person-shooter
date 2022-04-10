@@ -13,6 +13,8 @@ export interface Player {
 	rx: number
 	ry: number
 
+	shots: 0
+
 	crouch: boolean
 	connected: boolean
 }

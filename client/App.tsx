@@ -1,5 +1,5 @@
 import {defineElements, Scene} from 'lume'
-import {createEffect, Index, onCleanup, onMount, Show} from 'solid-js'
+import {createEffect, createMemo, createSignal, Index, onCleanup, onMount, Show} from 'solid-js'
 import createThrottle from '@solid-primitives/throttle'
 import {Character} from './Character'
 import {Rifle} from './Rifle'
@@ -63,6 +63,8 @@ export class App {
 		})
 	}
 
+	updatePlayer() {}
+
 	onPlayerMove = createThrottle(({x, y, z, rx, ry}: {x: number; y: number; z: number; rx: number; ry: number}) => {
 		Meteor.call('updatePlayer', {id: this.playerId, x, y, z, rx, ry, crouch: this.player!.crouch})
 	}, 20) // TODO what's a good throttle value?
@@ -98,7 +100,7 @@ export class App {
 							{/* @ts-expect-error JSX type in classy-solid needs update */}
 							<FirstPersonCamera onPlayerMove={this.onPlayerMove[0]}>
 								<lume-node position="40 120 -100" slot="camera-child">
-									<Rifle fireOnClick={true} />
+									<Rifle shootOnClick={true} onShoot={() => Meteor.call('shoot', this.playerId)} />
 								</lume-node>
 
 								<lume-node
@@ -120,6 +122,22 @@ export class App {
 							<Index each={this.players}>
 								{player => {
 									if (player().id === this.playerId) return null
+
+									const [rifle, setRifle] = createSignal<Rifle>()
+
+									onMount(() => {
+										const shot = createMemo(() => player().shots)
+
+										let firstRun = true
+
+										createEffect(() => {
+											if (!shot() || !rifle() || firstRun) return
+											if (firstRun) return (firstRun = false)
+
+											rifle()!.shoot()
+										})
+									})
+
 									return (
 										// The rotation/position attributes here are essentially duplicate of what <FirstPersonCamera> is doing.
 										// TODO: consolidate the duplication
@@ -129,7 +147,7 @@ export class App {
 										>
 											<lume-node rotation={[player().rx]}>
 												<lume-node position="40 120 -100">
-													<Rifle instance={i => (rifle = i)} />
+													<Rifle instance={setRifle} />
 												</lume-node>
 
 												<lume-node

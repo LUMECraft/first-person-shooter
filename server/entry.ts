@@ -29,6 +29,8 @@ Meteor.methods({
 
 			crouch: false,
 
+			shots: 0,
+
 			// TODO if player is disconnected, set to false, and then UI should no longer render this player
 			connected: true,
 		}
@@ -40,6 +42,10 @@ Meteor.methods({
 
 	updatePlayer({id, x, y, z, rx, ry, crouch}: Pick<Player, 'id' | 'x' | 'y' | 'z' | 'rx' | 'ry' | 'crouch'>) {
 		playersCollection.update({id}, {$set: {x, y, z, rx, ry, crouch}})
+	},
+
+	shoot(id) {
+		playersCollection.update({id}, {$inc: {shots: 1}})
 	},
 })
 

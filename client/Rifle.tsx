@@ -7,23 +7,46 @@ import {createEffect, onCleanup} from 'solid-js'
 @component
 @reactive
 export class Rifle {
-	PropTypes!: Props<this, 'fireOnClick'>
+	PropTypes!: Props<this, 'shootOnClick' | 'onShoot'>
 
-	@signal fireOnClick = false
+	/**
+	 * If true will automatically shoot when the user clicks anywhere in the scene.
+	 */
+	@signal shootOnClick = false
+
+	/**
+	 * If provided will be called any time the gun is fired.
+	 */
+	@signal onShoot: (() => void) | null = null
+
+	/**
+	 * This is similar to ref={} on regular elements. Pass in a signal setter
+	 * (or function that accepts the instance as an arg) to get an instance of
+	 * this component from JSX.
+	 *
+	 * Example:
+	 *
+	 * ```js
+	 * return <Rifle instance={setRifle} />
+	 * ```
+	 */
+	@signal instance: ((i: this) => void) | null = null
 
 	timeouts = new Set<number>()
 
 	onMount() {
+		queueMicrotask(() => this.instance?.(this))
+
 		createEffect(() => {
 			const scene = this.root.scene
 
-			if (!scene || !this.fireOnClick) return
+			if (!scene || !this.shootOnClick) return
 
 			// TODO move to onmousedown={} prop inside JSX (currently doesn't work, bug?)
-			scene.addEventListener('mousedown', this.fire)
+			scene.addEventListener('mousedown', this.shoot)
 
 			onCleanup(() => {
-				scene.removeEventListener('mousedown', this.fire)
+				scene.removeEventListener('mousedown', this.shoot)
 				for (const timeout of this.timeouts) clearTimeout(timeout)
 				this.tracer.visible = false
 				this.explosion.visible = false
@@ -31,7 +54,7 @@ export class Rifle {
 		})
 	}
 
-	fire = () => {
+	shoot = () => {
 		;(this.gunshot.cloneNode() as HTMLAudioElement).play()
 
 		if (Math.random() < 0.25) this.tracer.visible = true
@@ -44,6 +67,8 @@ export class Rifle {
 		}, 100)
 
 		this.timeouts.add(timeout)
+
+		this.onShoot?.()
 	}
 
 	constructor() {
