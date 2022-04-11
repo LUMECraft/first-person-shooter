@@ -134,7 +134,7 @@ export class App {
 										let firstRun = true
 
 										createEffect(() => {
-											if (!shots() || !rifle() || firstRun) return
+											if (!shots() || !rifle()) return
 											if (firstRun) return (firstRun = false)
 
 											rifle()!.shoot()
