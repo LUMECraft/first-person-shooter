@@ -2,11 +2,10 @@
 	"name": "first-person-shooter",
 	"private": true,
 	"scripts": {
-		"start": "npm run _meteor -- -p 8765",
+		"start": "npm run _meteor",
 		"build": "echo 'nothing to build for website'",
 		"dev": "npm run _meteor",
-		"_meteor": "meteor --exclude-archs web.browser.legacy",
-		"setup-website-service": "cd website && ./setup-service.sh",
+		"_meteor": "meteor --exclude-archs \"web.browser.legacy, web.cordova\"",
 		"// LUME Scripts below ///////////////////////////////////////": "",
 		"typecheck": "lume typecheck",
 		"typecheck:watch": "lume typecheckWatch"
@@ -14,6 +13,7 @@
 	"dependencies": {
 		"@babel/runtime": "^7.15.4",
 		"@lume/element": "^0.6.0",
+		"@solid-primitives/debounce": "^1.2.0",
 		"@solid-primitives/throttle": "^1.1.3",
 		"@tweenjs/tween.js": "^18.6.4",
 		"classy-solid": "^0.1.2",

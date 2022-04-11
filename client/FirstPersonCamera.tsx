@@ -17,7 +17,8 @@ export class FirstPersonCamera {
 	__playerMove() {
 		const {x, y, z} = this.camPosition
 		const {x: rx, y: ry} = this.camRotation
-		this.onPlayerMove?.({x, y, z, rx, ry, crouch: !!this.__crouchAmount})
+		const crouch = !!this.__crouchAmount
+		this.onPlayerMove?.({x, y, z, rx, ry, crouch})
 	}
 
 	camRotation = new XYZNumberValues()

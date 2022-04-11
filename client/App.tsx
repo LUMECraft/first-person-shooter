@@ -1,4 +1,4 @@
-import {defineElements, Scene, XYZNumberValues} from 'lume'
+import {defineElements, Scene} from 'lume'
 import {createEffect, createMemo, createSignal, Index, onCleanup, onMount, Show} from 'solid-js'
 import createThrottle from '@solid-primitives/throttle'
 import {Character} from './Character'
@@ -8,9 +8,6 @@ import {reactive, signal, component, Props} from 'classy-solid'
 import {FirstPersonCamera} from './FirstPersonCamera'
 import {Lights} from './Lights'
 import {Player, playersCollection} from '../imports/collections/players'
-
-// type t = React.Component<{n: number}>
-// type t2 = JSX.ElementClass
 
 // Define all the LUME elements with their default names.
 defineElements()
@@ -53,21 +50,22 @@ export class App {
 			onCleanup(() => computation.stop())
 		})
 
+		// join player to the match
 		Meteor.call('addPlayer', (_error: any, id: string) => {
-			queueMicrotask(() => {
-				console.log('client player id: ', id)
-				this.playerId = id
-			})
+			queueMicrotask(() => (this.playerId = id))
+			window.addEventListener('unload', () => Meteor.call('disconnect', id))
+		})
 
-			window.addEventListener('unload', () => {
-				Meteor.call('disconnect', id)
-			})
+		createEffect(() => {
+			if (!this.playerId) return
+			const int = setInterval(() => Meteor.call('heartbeat', this.playerId), 500)
+			onCleanup(() => clearInterval(int))
 		})
 	}
 
 	onPlayerMove = createThrottle(
 		({x, y, z, rx, ry, crouch}: {x: number; y: number; z: number; rx: number; ry: number; crouch: boolean}) => {
-			Meteor.call('updatePlayer', {id: this.playerId, x, y, z, rx, ry, crouch: this.playerCrouched})
+			Meteor.call('updatePlayer', {id: this.playerId, x, y, z, rx, ry, crouch})
 		},
 		20,
 	) // TODO this is very simple naive throttling
@@ -144,31 +142,33 @@ export class App {
 									return (
 										// The rotation/position attributes here are essentially duplicate of what <FirstPersonCamera> is doing.
 										// TODO: consolidate the duplication
-										<lume-node
-											rotation={[0, player().ry]}
-											position={[player().x, player().y, player().z]}
-										>
-											<lume-node rotation={[player().rx]}>
-												<lume-node position="40 120 -100">
-													<Rifle instance={setRifle} />
+										<Show when={player().connected}>
+											<lume-node
+												rotation={[0, player().ry]}
+												position={[player().x, player().y, player().z]}
+											>
+												<lume-node rotation={[player().rx]}>
+													<lume-node position="40 120 -100">
+														<Rifle instance={setRifle} />
+													</lume-node>
+
+													<lume-node
+														position="0 320 0"
+														rotation="0 180 0"
+														scale="0.48 0.48 0.48"
+														slot="camera-child"
+													>
+														<lume-fbx-model
+															id="model"
+															rotation="0 0 0"
+															src="/ChuckChuck/head.fbx"
+														></lume-fbx-model>
+													</lume-node>
 												</lume-node>
 
-												<lume-node
-													position="0 320 0"
-													rotation="0 180 0"
-													scale="0.48 0.48 0.48"
-													slot="camera-child"
-												>
-													<lume-fbx-model
-														id="model"
-														rotation="0 0 0"
-														src="/ChuckChuck/head.fbx"
-													></lume-fbx-model>
-												</lume-node>
+												<Character />
 											</lume-node>
-
-											<Character />
-										</lume-node>
+										</Show>
 									)
 								}}
 							</Index>
