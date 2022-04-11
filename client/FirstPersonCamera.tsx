@@ -8,24 +8,28 @@ import {render} from 'solid-js/web'
 @component
 @reactive
 export class FirstPersonCamera {
-	PropTypes!: Props<this, 'onPlayerMove'>
+	PropTypes!: Props<this, 'onPlayerMove' | 'crouchAmount'>
 
-	@signal onPlayerMove: ((pos: {x: number; y: number; z: number; rx: number; ry: number}) => void) | null = null
+	@signal onPlayerMove:
+		| ((pos: {x: number; y: number; z: number; rx: number; ry: number; crouch: boolean}) => void)
+		| null = null
 
 	__playerMove() {
 		const {x, y, z} = this.camPosition
 		const {x: rx, y: ry} = this.camRotation
-		this.onPlayerMove?.({x, y, z, rx, ry})
+		this.onPlayerMove?.({x, y, z, rx, ry, crouch: !!this.__crouchAmount})
 	}
 
 	camRotation = new XYZNumberValues()
 	camPosition = new XYZNumberValues()
-	@signal crouchAmount = 0
+
+	crouchAmount = 0
+	@signal __crouchAmount = this.crouchAmount
 
 	root!: Node
 
 	onMount() {
-		createEffect(() => (this.camPosition.y = this.crouchAmount))
+		createEffect(() => (this.camPosition.y = this.__crouchAmount))
 
 		createEffect(() => {
 			const scene = this.root.scene
@@ -118,13 +122,15 @@ export class FirstPersonCamera {
 			if (crouched) return
 
 			crouched = true
-			this.crouchAmount = 100
+			this.__crouchAmount = this.crouchAmount
+			this.__playerMove()
 		})
 
 		window.addEventListener('keyup', e => {
 			if (e.key != 'Shift') return
 			crouched = false
-			this.crouchAmount = 0
+			this.__crouchAmount = 0
+			this.__playerMove()
 		})
 	}
 

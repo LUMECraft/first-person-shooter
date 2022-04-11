@@ -1,4 +1,4 @@
-import {defineElements, Scene} from 'lume'
+import {defineElements, Scene, XYZNumberValues} from 'lume'
 import {createEffect, createMemo, createSignal, Index, onCleanup, onMount, Show} from 'solid-js'
 import createThrottle from '@solid-primitives/throttle'
 import {Character} from './Character'
@@ -23,6 +23,8 @@ export class App {
 	@signal playerId = ''
 	@signal player: Player | undefined = undefined
 	@signal players: Player[] = []
+
+	crouchAmount = 100
 
 	scene!: Scene
 
@@ -63,11 +65,12 @@ export class App {
 		})
 	}
 
-	updatePlayer() {}
-
-	onPlayerMove = createThrottle(({x, y, z, rx, ry}: {x: number; y: number; z: number; rx: number; ry: number}) => {
-		Meteor.call('updatePlayer', {id: this.playerId, x, y, z, rx, ry, crouch: this.player!.crouch})
-	}, 20) // TODO what's a good throttle value?
+	onPlayerMove = createThrottle(
+		({x, y, z, rx, ry, crouch}: {x: number; y: number; z: number; rx: number; ry: number; crouch: boolean}) => {
+			Meteor.call('updatePlayer', {id: this.playerId, x, y, z, rx, ry, crouch: this.playerCrouched})
+		},
+		20,
+	) // TODO this is very simple naive throttling
 
 	template() {
 		return (
@@ -92,13 +95,13 @@ export class App {
 							rotation="90 0 0"
 							mount-point="0.5 0.5"
 							size="5000 5000"
-							position="0 300 0"
+							position="0 315 0"
 						></lume-plane>
 
 						{/* TODO better loading experience */}
 						<Show when={this.player} fallback={<lume-box size="200 200 200" color="pink"></lume-box>}>
 							{/* @ts-expect-error JSX type in classy-solid needs update */}
-							<FirstPersonCamera onPlayerMove={this.onPlayerMove[0]}>
+							<FirstPersonCamera onPlayerMove={this.onPlayerMove[0]} crouchAmount={100}>
 								<lume-node position="40 120 -100" slot="camera-child">
 									<Rifle shootOnClick={true} onShoot={() => Meteor.call('shoot', this.playerId)} />
 								</lume-node>
@@ -126,12 +129,12 @@ export class App {
 									const [rifle, setRifle] = createSignal<Rifle>()
 
 									onMount(() => {
-										const shot = createMemo(() => player().shots)
+										const shots = createMemo(() => player().shots)
 
 										let firstRun = true
 
 										createEffect(() => {
-											if (!shot() || !rifle() || firstRun) return
+											if (!shots() || !rifle() || firstRun) return
 											if (firstRun) return (firstRun = false)
 
 											rifle()!.shoot()
