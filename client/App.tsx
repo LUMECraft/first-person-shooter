@@ -1,4 +1,4 @@
-import {defineElements, Scene} from 'lume'
+import {defineElements, Events, FbxModel, Scene} from 'lume'
 import {createEffect, createMemo, createSignal, Index, onCleanup, onMount, Show} from 'solid-js'
 import createThrottle from '@solid-primitives/throttle'
 import {Character} from './Character'
@@ -8,6 +8,7 @@ import {reactive, signal, component, Props} from 'classy-solid'
 import {FirstPersonCamera} from './FirstPersonCamera'
 import {Lights} from './Lights'
 import {Player, playersCollection} from '../imports/collections/players'
+import {MapItem, mapItems} from '../imports/collections/mapItems'
 
 // Define all the LUME elements with their default names.
 defineElements()
@@ -21,21 +22,16 @@ export class App {
 	@signal player: Player | undefined = undefined
 	@signal players: Player[] = []
 
+	@signal mapItems: MapItem[] = []
+
 	crouchAmount = 100
+	head!: FbxModel
 
 	scene!: Scene
 
 	onMount() {
-		createEffect(() => {
-			let computation: Tracker.Computation
-
-			Tracker.autorun(comp => {
-				computation = comp
-				this.players = playersCollection.find({}).fetch()
-			})
-
-			onCleanup(() => computation.stop())
-		})
+		trackerAutorun(() => (this.players = playersCollection.find().fetch()))
+		trackerAutorun(() => (this.mapItems = mapItems.find().fetch()))
 
 		createEffect(() => {
 			if (!this.playerId) return
@@ -61,14 +57,34 @@ export class App {
 			const int = setInterval(() => Meteor.call('heartbeat', this.playerId), 500)
 			onCleanup(() => clearInterval(int))
 		})
+
+		createEffect(() => {
+			if (!this.player) return
+
+			this.head.on(Events.MODEL_LOAD, () => {
+				this.head.three.traverse(n => {
+					if (n.material) {
+						const m = n as THREE.Mesh
+						// TODO attribute for model loaders so we don't have to manually do this to Three.js objects.
+						m.castShadow = true
+						m.receiveShadow = true
+						// m.material.transparent = true
+						// m.material.opacity = 0
+					}
+				})
+			})
+		})
+		// setTimeout(() => {
+		// }, 1000)
 	}
 
+	// TODO this is very simple naive throttling
 	onPlayerMove = createThrottle(
 		({x, y, z, rx, ry, crouch}: {x: number; y: number; z: number; rx: number; ry: number; crouch: boolean}) => {
 			Meteor.call('updatePlayer', {id: this.playerId, x, y, z, rx, ry, crouch})
 		},
 		20,
-	) // TODO this is very simple naive throttling
+	)
 
 	template() {
 		return (
@@ -77,22 +93,21 @@ export class App {
 					<lume-node size-mode="proportional proportional" size="1 1">
 						<Lights />
 
-						{/* background */}
-						{/* <lume-sphere
+						{/* sky */}
+						<lume-sphere
 							has="basic-material"
-							color="white"
+							color="#94c4ff"
 							sidedness="double"
-							texture="https://assets.codepen.io/191583/airplane-hanger-env-map.jpg"
 							size="100000"
 							mount-point="0.5 0.5 0.5"
-						></lume-sphere> */}
+						></lume-sphere>
 
-						{/* floor */}
+						{/* ground */}
 						<lume-plane
-							color="brown"
+							color="#626e43"
 							rotation="90 0 0"
 							mount-point="0.5 0.5"
-							size="5000 5000"
+							size="200000 200000"
 							position="0 315 0"
 						></lume-plane>
 
@@ -104,20 +119,24 @@ export class App {
 									<Rifle shootOnClick={true} onShoot={() => Meteor.call('shoot', this.playerId)} />
 								</lume-node>
 
+								{/* This is the current player's head, but we don't need to show it in first-person PoV. */}
 								<lume-node
-									position="0 320 0"
+									position="0 320 50"
 									rotation="0 180 0"
 									scale="0.48 0.48 0.48"
 									slot="camera-child"
 								>
 									<lume-fbx-model
-										id="model"
+										ref={this.head}
 										rotation="0 0 0"
 										src="/ChuckChuck/head.fbx"
 									></lume-fbx-model>
 								</lume-node>
 
-								<Character />
+								{/* move player body backward just a tad for better view when looking down */}
+								<lume-node position="0 0 40">
+									<Character />
+								</lume-node>
 							</FirstPersonCamera>
 
 							<Index each={this.players}>
@@ -125,6 +144,7 @@ export class App {
 									if (player().id === this.playerId) return null
 
 									const [rifle, setRifle] = createSignal<Rifle>()
+									let head!: FbxModel
 
 									onMount(() => {
 										const shots = createMemo(() => player().shots)
@@ -136,6 +156,21 @@ export class App {
 											if (firstRun) return (firstRun = false)
 
 											rifle()!.shoot()
+										})
+
+										createEffect(() => {
+											if (!player().connected) return
+
+											head.on(Events.MODEL_LOAD, () => {
+												head.three.traverse(n => {
+													if (n.material) {
+														const m = n as THREE.Mesh
+														// TODO attribute for model loaders so we don't have to manually do this to Three.js objects.
+														m.castShadow = true
+														m.receiveShadow = true
+													}
+												})
+											})
 										})
 									})
 
@@ -159,7 +194,7 @@ export class App {
 														slot="camera-child"
 													>
 														<lume-fbx-model
-															id="model"
+															ref={head}
 															rotation="0 0 0"
 															src="/ChuckChuck/head.fbx"
 														></lume-fbx-model>
@@ -173,6 +208,35 @@ export class App {
 								}}
 							</Index>
 						</Show>
+
+						{/* map */}
+						<Index each={this.mapItems}>
+							{item => {
+								const scale = mapItemScales[item().type]
+								let model!: FbxModel
+
+								// model.on(Events.MODEL_LOAD, () => {
+								setTimeout(() => {
+									model.three.traverse(n => {
+										if (n.material) {
+											const m = n as THREE.Mesh
+											// TODO attribute for model loaders so we don't have to manually do this to Three.js objects.
+											m.castShadow = true
+											m.receiveShadow = true
+										}
+									})
+								}, 1000)
+
+								return (
+									<lume-fbx-model
+										ref={model}
+										position={[item().x, 320, item().z]}
+										src={`/${item().type}.fbx`}
+										scale={[scale, scale, scale]}
+									></lume-fbx-model>
+								)
+							}}
+						</Index>
 					</lume-node>
 				</lume-scene>
 
@@ -180,4 +244,21 @@ export class App {
 			</>
 		)
 	}
+}
+
+const mapItemScales = {
+	tree: 2,
+	big_tree: 1,
+	shrub: 1.4,
+	shrub2: 1.4,
+	stone: 1.5,
+}
+
+function trackerAutorun(effect) {
+	let computation: Tracker.Computation
+	Tracker.autorun(comp => {
+		computation = comp
+		effect()
+	})
+	onCleanup(() => computation.stop())
 }

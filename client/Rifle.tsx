@@ -52,6 +52,21 @@ export class Rifle {
 				this.explosion.visible = false
 			})
 		})
+
+		setTimeout(() => {
+			this.root.three.traverse(n => {
+				console.log('modify material????')
+
+				if (n.material) {
+					const m = n as THREE.Mesh
+					console.log('modify material!!')
+					// TODO this isn't firing.
+					// TODO attribute for model loaders so we don't have to manually do this to Three.js objects.
+					m.castShadow = true
+					m.receiveShadow = true
+				}
+			})
+		}, 1000)
 	}
 
 	shoot = () => {
@@ -92,7 +107,7 @@ export class Rifle {
 					visible="false"
 					has="basic-material"
 					opacity="0.5"
-					size="50 50 50"
+					size="100 100 100"
 					color="yellow"
 					mount-point="0.5 0.5 1"
 				></lume-sphere>
@@ -103,7 +118,7 @@ export class Rifle {
 					visible="false"
 					has="basic-material"
 					opacity="0.6"
-					size="15 15 8000"
+					size="8 8 8000"
 					color="white"
 					mount-point="0.5 0.5 1"
 				></lume-box>

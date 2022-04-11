@@ -8,8 +8,7 @@ import {createMutable} from 'solid-js/store'
 @component
 // @reactive
 export class Lights {
-	// PropTypes!: Props<this, never>
-	PropTypes!: Props<Node, keyof Node>
+	PropTypes!: Props<this, never>
 
 	debug = false
 

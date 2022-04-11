@@ -68,6 +68,7 @@ export class FirstPersonCamera {
 			})
 		})
 
+		const moveSpeed = 1
 		const keysDown = {w: false, a: false, s: false, d: false}
 
 		for (const key of ['w', 'a', 's', 'd'] as const) {
@@ -82,20 +83,20 @@ export class FirstPersonCamera {
 				let nextPositionY = (dt: number) => 0
 
 				if (key === 'w') {
-					nextPositionZ = dt => -Math.cos(toRadians(this.camRotation.y)) * 0.5 * dt
-					nextPositionY = dt => -Math.sin(toRadians(this.camRotation.y)) * 0.5 * dt
+					nextPositionZ = dt => -Math.cos(toRadians(this.camRotation.y)) * moveSpeed * dt
+					nextPositionY = dt => -Math.sin(toRadians(this.camRotation.y)) * moveSpeed * dt
 				}
 				if (key === 'a') {
-					nextPositionZ = dt => Math.sin(toRadians(this.camRotation.y)) * 0.5 * dt
-					nextPositionY = dt => -Math.cos(toRadians(this.camRotation.y)) * 0.5 * dt
+					nextPositionZ = dt => Math.sin(toRadians(this.camRotation.y)) * moveSpeed * dt
+					nextPositionY = dt => -Math.cos(toRadians(this.camRotation.y)) * moveSpeed * dt
 				}
 				if (key === 's') {
-					nextPositionZ = dt => Math.cos(toRadians(this.camRotation.y)) * 0.5 * dt
-					nextPositionY = dt => Math.sin(toRadians(this.camRotation.y)) * 0.5 * dt
+					nextPositionZ = dt => Math.cos(toRadians(this.camRotation.y)) * moveSpeed * dt
+					nextPositionY = dt => Math.sin(toRadians(this.camRotation.y)) * moveSpeed * dt
 				}
 				if (key === 'd') {
-					nextPositionZ = dt => -Math.sin(toRadians(this.camRotation.y)) * 0.5 * dt
-					nextPositionY = dt => Math.cos(toRadians(this.camRotation.y)) * 0.5 * dt
+					nextPositionZ = dt => -Math.sin(toRadians(this.camRotation.y)) * moveSpeed * dt
+					nextPositionY = dt => Math.cos(toRadians(this.camRotation.y)) * moveSpeed * dt
 				}
 
 				Motor.addRenderTask((t, dt) => {

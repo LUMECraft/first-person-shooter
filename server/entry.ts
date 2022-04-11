@@ -1,5 +1,6 @@
 import {Player, playersCollection} from '../imports/collections/players'
 import createDebounce, {DebouncedFunction} from '@solid-primitives/debounce'
+import {mapItems} from '../imports/collections/mapItems'
 
 // TODO This is all currently naive and unoptimized, easy to hack/cheat from the client.
 
@@ -82,3 +83,22 @@ function disconnect(id) {
 Meteor.publish('players', function () {
 	return playersCollection.find()
 })
+
+/// generate map
+
+mapItems.remove({})
+
+Meteor.publish('mapItems', function () {
+	return mapItems.find()
+})
+
+const playArea = 16000
+const mapItemTypes = ['tree', 'stone', 'shrub', 'shrub2', 'big_tree'] as const
+
+for (let i = 0; i < 30; i += 1) {
+	mapItems.insert({
+		type: mapItemTypes[Math.round((mapItemTypes.length - 1) * Math.random())],
+		x: playArea * Math.random() - playArea / 2,
+		z: playArea * Math.random() - playArea / 2,
+	})
+}

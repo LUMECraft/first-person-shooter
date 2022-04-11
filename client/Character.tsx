@@ -12,17 +12,16 @@ export class Character {
 	root!: Node
 
 	onMount() {
-		this.root.on('GL_LOAD', () => {
+		setTimeout(() => {
 			this.root.three.traverse(n => {
 				if (n.material) {
-					// TODO this isn't firing.
+					const m = n as THREE.Mesh
 					// TODO attribute for model loaders so we don't have to manually do this to Three.js objects.
-					console.log('modify material!')
-					n.material.cashShadow = true
-					n.material.receiveShadow = true
+					m.castShadow = true
+					m.receiveShadow = true
 				}
 			})
-		})
+		}, 1000)
 	}
 
 	constructor() {
