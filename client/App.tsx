@@ -1,10 +1,28 @@
-import {defineElements, Events, FbxModel, Scene} from 'lume'
-import {createEffect, createMemo, createSignal, Index, onCleanup, onMount, Show} from 'solid-js'
+/*
+todo
+- raycast on shoot
+- make particle blast
+- add health bar
+- on shoot player
+  - show (red?) particle blast
+  - lower health
+- on 0 health
+  - disconnect player
+  - blast particles when player body disappears
+  - show dead icon
+  - for now, just refresh to respawn (kinda funny if you think about the implications of how web apps work)
+- add shot count
+- add number of kills
+- add match name/ID as URL query param
+*/
+
+import {defineElements, Events, FbxModel, Node, Scene} from 'lume'
+import {createEffect, createMemo, createSignal, Index, onCleanup, onMount, Show, untrack} from 'solid-js'
 import createThrottle from '@solid-primitives/throttle'
 import {Character} from './Character'
 import {Rifle} from './Rifle'
 // import {Tween, Easing} from '@tweenjs/tween.js'
-import {reactive, signal, component, Props} from 'classy-solid'
+import {reactive, signal, component, Props, createSignalObject} from 'classy-solid'
 import {FirstPersonCamera} from './FirstPersonCamera'
 import {Lights} from './Lights'
 import {Player, playersCollection} from '../imports/collections/players'
@@ -22,11 +40,18 @@ export class App {
 	@signal player: Player | undefined = undefined
 	@signal players: Player[] = []
 
+	playerElements = createSignalObject(new Set<Node>(), {equals: false})
+
+	constructor() {
+		// debug
+		window.playerElements = this.playerElements
+	}
+
 	@signal mapItems: MapItem[] = []
 
-	crouchAmount = 100
-	head!: FbxModel
+	readonly crouchAmount = 100
 
+	head!: FbxModel
 	scene!: Scene
 
 	onMount() {
@@ -114,7 +139,11 @@ export class App {
 						{/* TODO better loading experience */}
 						<Show when={this.player} fallback={<lume-box size="200 200 200" color="pink"></lume-box>}>
 							{/* @ts-expect-error JSX type in classy-solid needs update */}
-							<FirstPersonCamera onPlayerMove={this.onPlayerMove[0]} crouchAmount={100}>
+							<FirstPersonCamera
+								onPlayerMove={this.onPlayerMove[0]}
+								crouchAmount={this.crouchAmount}
+								intersectObjects={this.playerElements.get()}
+							>
 								<lume-node position="40 120 -100" slot="camera-child">
 									<Rifle shootOnClick={true} onShoot={() => Meteor.call('shoot', this.playerId)} />
 								</lume-node>
@@ -145,6 +174,7 @@ export class App {
 
 									const [rifle, setRifle] = createSignal<Rifle>()
 									let head!: FbxModel
+									let playerElement!: Node
 
 									onMount(() => {
 										const shots = createMemo(() => player().shots)
@@ -172,13 +202,34 @@ export class App {
 												})
 											})
 										})
+
+										this.playerElements.get().add(playerElement)
+										this.playerElements.set(v => v) // trigger reactivity
+										console.log('add player element', [...this.playerElements.get()])
+										debugger
 									})
 
 									return (
 										// The rotation/position attributes here are essentially duplicate of what <FirstPersonCamera> is doing.
 										// TODO: consolidate the duplication
-										<Show when={player().connected}>
+										<Show
+											when={player().connected}
+											fallback={untrack(() => {
+												this.playerElements.get().delete(playerElement)
+												this.playerElements.set(v => v) // trigger reactivity
+												console.log('delete player element', [...this.playerElements.get()])
+												debugger
+												return <></>
+											})}
+										>
 											<lume-node
+												ref={playerElement}
+												// ref={el => {
+												// 	untrack(() => {
+												// 		this.playerElements.get().add((playerElement = el))
+												// 		this.playerElements.set(v => v) // trigger reactivity
+												// 	})
+												// }}
 												rotation={[0, player().ry]}
 												position={[player().x, player().y, player().z]}
 											>

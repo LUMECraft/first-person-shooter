@@ -1,18 +1,64 @@
 import {reactive, signal} from 'classy-solid'
 import {component, Props} from 'classy-solid'
-import {clamp, Motor, Node, toRadians, XYZNumberValues} from 'lume'
+import {clamp, Motor, Node, toRadians, XYZNumberValues, THREE, PerspectiveCamera} from 'lume'
 import {createMutable} from 'solid-js/store'
 import {createEffect, onCleanup, JSX} from 'solid-js'
 import {render} from 'solid-js/web'
+import {Vector2} from 'three'
+
+const {Raycaster} = THREE
+const caster = new Raycaster()
 
 @component
 @reactive
 export class FirstPersonCamera {
 	PropTypes!: Props<this, 'onPlayerMove' | 'crouchAmount'>
-
 	@signal onPlayerMove:
 		| ((pos: {x: number; y: number; z: number; rx: number; ry: number; crouch: boolean}) => void)
 		| null = null
+	crouchAmount = 0
+	@signal intersectObjects: Set<Node> | null = null
+
+	camRotation = new XYZNumberValues()
+	camPosition = new XYZNumberValues()
+
+	@signal __crouchAmount = this.crouchAmount
+
+	root!: Node
+	camera!: PerspectiveCamera
+
+	template = (props: this['PropTypes']) => {
+		// const children = props.children
+
+		return (
+			<lume-node
+				ref={this.root}
+				rotation={[0, this.camRotation.y]}
+				position={[this.camPosition.x, this.camPosition.y, this.camPosition.z]}
+				use:shadow={
+					<>
+						<slot></slot>
+
+						<lume-perspective-camera
+							ref={this.camera}
+							active
+							rotation={[this.camRotation.x]}
+							far="200000"
+							zoom={1}
+						>
+							<slot name="camera-child"></slot>
+						</lume-perspective-camera>
+
+						{/* <lume-camera-rig active rotation={[this.camRotation.x]}>
+							<slot name="camera-child"></slot>
+						</lume-camera-rig> */}
+					</>
+				}
+			>
+				{props.children}
+			</lume-node>
+		)
+	}
 
 	__playerMove() {
 		const {x, y, z} = this.camPosition
@@ -20,14 +66,6 @@ export class FirstPersonCamera {
 		const crouch = !!this.__crouchAmount
 		this.onPlayerMove?.({x, y, z, rx, ry, crouch})
 	}
-
-	camRotation = new XYZNumberValues()
-	camPosition = new XYZNumberValues()
-
-	crouchAmount = 0
-	@signal __crouchAmount = this.crouchAmount
-
-	root!: Node
 
 	onMount() {
 		createEffect(() => (this.camPosition.y = this.__crouchAmount))
@@ -128,41 +166,64 @@ export class FirstPersonCamera {
 			this.__playerMove()
 		})
 
+		// TODO LUME: make raycaster an HTML element so that the ray can be positioned in 3D space just like any other object.
+
 		window.addEventListener('keyup', e => {
 			if (e.key != 'Shift') return
 			crouched = false
 			this.__crouchAmount = 0
 			this.__playerMove()
 		})
+
+		console.log('first person cam mounted')
+
+		createEffect(() => {
+			console.log('intersectObjects:', Array.from(this.intersectObjects ?? []))
+		})
+
+		let deferred = false
+		createEffect(() => {
+			// Any time these change,
+			const {x, y, z} = this.camPosition
+			const {x: rx, y: ry} = this.camRotation
+			const crouch = !!this.__crouchAmount
+			this.intersectObjects
+
+			if (deferred) return
+			deferred = true
+
+			Motor.once(async () => {
+				// ensure we run this after scene transforms are updated. (TODO better API f.e. Motor.afterRender())
+				await Promise.resolve()
+				await Promise.resolve()
+
+				deferred = false
+
+				// update line-of-sight intersections so App can determine who gets shot.
+				caster.setFromCamera(
+					new Vector2(0, 0), // cast from the center of the screen
+					this.camera!.three,
+				)
+
+				if (this.intersectObjects)
+					caster.intersectObjects(
+						[...this.intersectObjects]
+							.map(el => el?.three)
+							// fixme bug: undefined values getting in here. This whole thing is a quick hack for Solid Hack. :)
+							.filter(o => !!o),
+					)
+			})
+		})
 	}
 
 	constructor() {
+		// Experimenting with createMutable(this) vs using @signal for
+		// properties. This might be easier for making all props implicitly
+		// reactive, but more overhead.
+		//
+		// TODO Commenting this out breaks player position synchronization for some
+		// reason, no idea why yet. haha.
 		return createMutable(this)
-	}
-
-	template = (props: this['PropTypes']) => {
-		// const children = props.children
-
-		return (
-			<lume-node
-				ref={this.root}
-				rotation={[0, this.camRotation.y]}
-				position={[this.camPosition.x, this.camPosition.y, this.camPosition.z]}
-				use:shadow={
-					<>
-						<slot></slot>
-						<lume-perspective-camera active rotation={[this.camRotation.x]} far="200000" zoom={1}>
-							<slot name="camera-child"></slot>
-						</lume-perspective-camera>
-						{/* <lume-camera-rig active rotation={[this.camRotation.x]}>
-							<slot name="camera-child"></slot>
-						</lume-camera-rig> */}
-					</>
-				}
-			>
-				{props.children}
-			</lume-node>
-		)
 	}
 }
 
@@ -175,7 +236,7 @@ async function shadow(el: Element, args: () => JSX.Element | [JSX.Element, Shado
 			? _args
 			: [() => _args]
 
-	// Defer for one microtask so custom element upgrades can happen.
+	// FIXME HACKY: Defer for one microtask so custom element upgrades can happen. Will this always work?
 	await Promise.resolve()
 
 	if (el.tagName.includes('-') && !customElements.get(el.tagName.toLowerCase())) {
