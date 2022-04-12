@@ -1,5 +1,21 @@
 {
 	"name": "first-person-shooter",
+	"version": "0.0.0",
+	"description": "An first-person shooter game made with LUME, Solid.js (and libs), and Meteor.",
+	"info": "LUMECraft's `first-person-shooter` aims to be an open-source starting point for FPS games written declaratively using LUME's 3D HTML elements with Solid.js templating and reactivity, and realtime multiplayer connectivity powered by Meteor.js. Eventually it will be skinnable, moddable, and more.",
+	"contributors": [
+		{
+			"name": "Joe Pea",
+			"email": "trusktr@gmail.com",
+			"url": "https://lume.io"
+		}
+	],
+	"license": "MIT",
+	"homepage": "http://github.com/LUMECraft/first-person-shooter#readme",
+	"repository": {
+		"type": "git",
+		"url": "git+ssh://git@github.com/LUMECraft/first-person-shooter.git"
+	},
 	"private": true,
 	"scripts": {
 		"start": "npm run _meteor",
@@ -39,5 +55,15 @@
 			"three": "$three"
 		},
 		"solid-js": "$solid-js"
-	}
+	},
+	"keywords": [
+		"solidhack",
+		"best_app",
+		"game",
+		"fps",
+		"first-person-shooter",
+		"3d",
+		"gaming",
+		"game-engine"
+	]
 }
