@@ -1,6 +1,8 @@
 # `first-persion-shooter`
 
-An first-person shooter game foundation made with [LUME](https://lume.io/), [Solid.js](https://solidjs.com/) (and libs), and [Meteor](https://www.meteor.com/).
+A first-person shooter game foundation made with [LUME](https://lume.io/),
+[Solid.js](https://solidjs.com/) (and libs), and
+[Meteor](https://www.meteor.com/).
 
 LUMECraft's `first-person-shooter` aims to be an open-source starting point for
 FPS games written declaratively using LUME's 3D HTML elements with Solid.js

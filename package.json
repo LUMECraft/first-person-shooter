@@ -1,7 +1,7 @@
 {
 	"name": "first-person-shooter",
 	"version": "0.0.0",
-	"description": "An first-person shooter game made with LUME, Solid.js (and libs), and Meteor.",
+	"description": "A first-person shooter game made with LUME, Solid.js (and libs), and Meteor.",
 	"info": "LUMECraft's `first-person-shooter` aims to be an open-source starting point for FPS games written declaratively using LUME's 3D HTML elements with Solid.js templating and reactivity, and realtime multiplayer connectivity powered by Meteor.js. Eventually it will be skinnable, moddable, and more.",
 	"contributors": [
 		{
