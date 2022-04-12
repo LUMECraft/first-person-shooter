@@ -1,5 +1,5 @@
-import {reactive, signal} from 'classy-solid'
-import {component, Props} from 'classy-solid'
+import {component, Props, reactive, signal} from 'classy-solid'
+import throttle from 'lodash.throttle'
 import type {Box, Node} from 'lume'
 import {createMutable} from 'solid-js/store'
 import {createEffect, onCleanup} from 'solid-js'
@@ -18,6 +18,11 @@ export class Rifle {
 	 * If provided will be called any time the gun is fired.
 	 */
 	@signal onShoot: (() => void) | null = null
+
+	/**
+	 * Throttles the rate at which the gun fires. 0 means no throttle.
+	 */
+	@signal shotThrottle = 0
 
 	// TODO move this to the @component decorator
 	/**
@@ -54,6 +59,15 @@ export class Rifle {
 			})
 		})
 
+		createEffect(() => {
+			if (this.shotThrottle) {
+				this.shoot = throttle(this._shoot, this.shotThrottle, {leading: true, trailing: false})
+				onCleanup(() => this.shoot.cancel())
+			} else {
+				this.shoot = this._shoot
+			}
+		})
+
 		setTimeout(() => {
 			this.root.three.traverse(n => {
 				console.log('modify material????')
@@ -70,7 +84,7 @@ export class Rifle {
 		}, 1000)
 	}
 
-	shoot = () => {
+	_shoot = () => {
 		;(this.gunshot.cloneNode() as HTMLAudioElement).play()
 
 		if (Math.random() < 0.25) this.tracer.visible = true
@@ -86,6 +100,8 @@ export class Rifle {
 
 		this.onShoot?.()
 	}
+
+	shoot = this._shoot
 
 	constructor() {
 		return createMutable(this)

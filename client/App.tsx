@@ -101,7 +101,7 @@ export class App {
 
 		createEffect(() => {
 			if (!this.playerId) return
-			const int = setInterval(() => Meteor.call('heartbeat', this.playerId), 500)
+			const int = setInterval(() => Meteor.call('heartbeat', this.playerId), 1000)
 			onCleanup(() => clearInterval(int))
 		})
 
@@ -153,7 +153,7 @@ export class App {
 		({x, y, z, rx, ry, crouch}: {x: number; y: number; z: number; rx: number; ry: number; crouch: boolean}) => {
 			Meteor.call('updatePlayer', {id: this.playerId, x, y, z, rx, ry, crouch})
 		},
-		20,
+		150,
 	)
 
 	camera = createSignalFunction<FirstPersonCamera>()
@@ -198,6 +198,7 @@ export class App {
 								<lume-node position="40 120 -100" slot="camera-child">
 									<Rifle
 										shootOnClick={true}
+										shotThrottle={400}
 										onShoot={() => {
 											// Quick hacky: In an proper game, shot intersection would probably be detected by the server instead of the client to avoid cheating?
 											this.camera()!.intersect()
