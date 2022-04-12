@@ -1,10 +1,39 @@
-import {defineElements, Events, FbxModel, Scene} from 'lume'
-import {createEffect, createMemo, createSignal, Index, onCleanup, onMount, Show} from 'solid-js'
+/*
+todo
+- raycast on shoot
+- make particle blast
+- add health bar
+- on shoot player
+  - show (red?) particle blast
+  - lower health
+- on 0 health
+  - disconnect player
+  - blast particles when player body disappears
+  - show dead icon
+  - for now, just refresh to respawn (kinda funny if you think about the implications of how web apps work)
+- add shot count
+- add number of kills
+- add match name/ID as URL query param
+*/
+
+import {defineElements, Events, FbxModel, Node, Scene} from 'lume'
+import {
+	batch,
+	createEffect,
+	createMemo,
+	createSignal,
+	getOwner,
+	Index,
+	onCleanup,
+	onMount,
+	Show,
+	untrack,
+} from 'solid-js'
 import createThrottle from '@solid-primitives/throttle'
 import {Character} from './Character'
 import {Rifle} from './Rifle'
 // import {Tween, Easing} from '@tweenjs/tween.js'
-import {reactive, signal, component, Props} from 'classy-solid'
+import {reactive, signal, component, Props, createSignalObject, createSignalFunction} from 'classy-solid'
 import {FirstPersonCamera} from './FirstPersonCamera'
 import {Lights} from './Lights'
 import {Player, playersCollection} from '../imports/collections/players'
@@ -22,34 +51,52 @@ export class App {
 	@signal player: Player | undefined = undefined
 	@signal players: Player[] = []
 
+	@signal health = 100
+	@signal dead = false
+
+	playerElements = createSignalObject(new Map<Node, string>(), {equals: false})
+
 	@signal mapItems: MapItem[] = []
+	@signal intersectedElements: Node[] = []
 
-	crouchAmount = 100
+	readonly crouchAmount = 100
+
 	head!: FbxModel
-
 	scene!: Scene
 
 	onMount() {
-		trackerAutorun(() => (this.players = playersCollection.find().fetch()))
-		trackerAutorun(() => (this.mapItems = mapItems.find().fetch()))
-
-		createEffect(() => {
-			if (!this.playerId) return
-
-			let computation: Tracker.Computation
-
-			Tracker.autorun(comp => {
-				computation = comp
-				this.player = playersCollection.findOne({id: this.playerId})
-			})
-
-			onCleanup(() => computation.stop())
-		})
-
 		// join player to the match
 		Meteor.call('addPlayer', (_error: any, id: string) => {
 			queueMicrotask(() => (this.playerId = id))
 			window.addEventListener('unload', () => Meteor.call('disconnect', id))
+		})
+
+		trackerAutorun(() => (this.players = playersCollection.find().fetch()))
+		trackerAutorun(() => (this.mapItems = mapItems.find().fetch()))
+		createEffect(() => {
+			this.playerId
+			trackerAutorun(() => {
+				this.health = playersCollection.findOne(this.playerId)?.health ?? 100
+				console.log('health:', this.health)
+			})
+		})
+
+		createEffect(() => {
+			if (!this.playerId) return
+			// if no more life, die, refresh browser to respawn.
+			if (this.health <= 0) {
+				Meteor.call('disconnect', this.playerId)
+				batch(() => {
+					this.dead = true
+					this.playerId = ''
+					this.player = undefined
+				})
+			}
+		})
+
+		createEffect(() => {
+			if (!this.playerId) return
+			trackerAutorun(() => (this.player = playersCollection.findOne({id: this.playerId})))
 		})
 
 		createEffect(() => {
@@ -74,8 +121,31 @@ export class App {
 				})
 			})
 		})
-		// setTimeout(() => {
-		// }, 1000)
+
+		createEffect(() => {
+			// Assume bullet hits only the first person it reaches.
+			const unluckyPlayerId = untrack(() => this.playerElements)
+				.get()
+				.get(this.intersectedElements[0])
+			if (!unluckyPlayerId) return
+			console.log('player shot:', unluckyPlayerId)
+			Meteor.call('hit', unluckyPlayerId)
+		})
+
+		// Random initial placement for player
+		createEffect(() => {
+			if (!this.camera()) return
+
+			// start in a random place
+			const pos = this.camera()!.camPosition
+			const playArea = 10000
+			pos.x = playArea * Math.random() - playArea / 2
+			pos.z = playArea * Math.random() - playArea / 2
+
+			// start looking in a random direction
+			const rot = this.camera()!.camRotation
+			rot.y = 360 * Math.random()
+		})
 	}
 
 	// TODO this is very simple naive throttling
@@ -85,6 +155,8 @@ export class App {
 		},
 		20,
 	)
+
+	camera = createSignalFunction<FirstPersonCamera>()
 
 	template() {
 		return (
@@ -114,9 +186,24 @@ export class App {
 						{/* TODO better loading experience */}
 						<Show when={this.player} fallback={<lume-box size="200 200 200" color="pink"></lume-box>}>
 							{/* @ts-expect-error JSX type in classy-solid needs update */}
-							<FirstPersonCamera onPlayerMove={this.onPlayerMove[0]} crouchAmount={100}>
+							<FirstPersonCamera
+								instance={this.camera}
+								onPlayerMove={this.onPlayerMove[0]}
+								crouchAmount={this.crouchAmount}
+								elementsToIntersect={new Set(this.playerElements.get().keys())}
+								// TODO we should be able to instead createEffect(() => camera.intersectedElements) but that currently doesn't work.
+								onIntersect={(els: Node[]) => (this.intersectedElements = els)}
+								autoIntersect={false} // we'll tell it when to intersect, which will be only when we shoot.
+							>
 								<lume-node position="40 120 -100" slot="camera-child">
-									<Rifle shootOnClick={true} onShoot={() => Meteor.call('shoot', this.playerId)} />
+									<Rifle
+										shootOnClick={true}
+										onShoot={() => {
+											// Quick hacky: In an proper game, shot intersection would probably be detected by the server instead of the client to avoid cheating?
+											this.camera()!.intersect()
+											Meteor.call('shoot', this.playerId)
+										}}
+									/>
 								</lume-node>
 
 								{/* This is the current player's head, but we don't need to show it in first-person PoV. */}
@@ -141,10 +228,12 @@ export class App {
 
 							<Index each={this.players}>
 								{player => {
-									if (player().id === this.playerId) return null
+									const id = player().id
+									if (id === this.playerId) return null
 
 									const [rifle, setRifle] = createSignal<Rifle>()
 									let head!: FbxModel
+									let playerElement!: Node
 
 									onMount(() => {
 										const shots = createMemo(() => player().shots)
@@ -172,13 +261,24 @@ export class App {
 												})
 											})
 										})
+
+										this.playerElements.get().set(playerElement, id)
+										this.playerElements.set(v => v) // trigger reactivity
 									})
 
 									return (
 										// The rotation/position attributes here are essentially duplicate of what <FirstPersonCamera> is doing.
 										// TODO: consolidate the duplication
-										<Show when={player().connected}>
+										<Show
+											when={player().connected}
+											fallback={untrack(() => {
+												this.playerElements.get().delete(playerElement)
+												this.playerElements.set(v => v) // trigger reactivity
+												return <></>
+											})}
+										>
 											<lume-node
+												ref={playerElement}
 												rotation={[0, player().ry]}
 												position={[player().x, player().y, player().z]}
 											>
@@ -240,7 +340,23 @@ export class App {
 					</lume-node>
 				</lume-scene>
 
-				<div class="crosshair"></div>
+				<div class="overlay">
+					<div class="crosshair"></div>
+
+					<div class="health-bar">
+						<div class="health-value" style={{width: this.health + '%'}}></div>
+					</div>
+
+					<Show when={this.dead}>
+						<div class="dead">
+							<h1>
+								YER DEAD!
+								<br />
+								<sub>(refresh browser to respawn)</sub>
+							</h1>
+						</div>
+					</Show>
+				</div>
 			</>
 		)
 	}
@@ -254,11 +370,11 @@ const mapItemScales = {
 	stone: 1.5,
 }
 
-function trackerAutorun(effect) {
+function trackerAutorun(effect: () => void) {
 	let computation: Tracker.Computation
 	Tracker.autorun(comp => {
 		computation = comp
 		effect()
 	})
-	onCleanup(() => computation.stop())
+	if (getOwner()) onCleanup(() => computation.stop())
 }

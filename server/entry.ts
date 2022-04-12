@@ -71,6 +71,14 @@ Meteor.methods({
 	shoot(id) {
 		playersCollection.update(id, {$inc: {shots: 1}})
 	},
+
+	hit(id) {
+		// playersCollection.update(id, {$inc: {health: -20}})
+		playersCollection.update(id, {$inc: {health: -100}})
+		// ^ FIXME for now one shot kills. For some reason reactivity stops tracking after a player is hit with the first shot, so take all life away at once, for now.
+
+		console.log('lower player health:', id, playersCollection.findOne(id)?.health)
+	},
 })
 
 function disconnect(id) {

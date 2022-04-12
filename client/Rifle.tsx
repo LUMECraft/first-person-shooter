@@ -19,6 +19,7 @@ export class Rifle {
 	 */
 	@signal onShoot: (() => void) | null = null
 
+	// TODO move this to the @component decorator
 	/**
 	 * This is similar to ref={} on regular elements. Pass in a signal setter
 	 * (or function that accepts the instance as an arg) to get an instance of
