@@ -1,4 +1,4 @@
-# `first-persion-shooter`
+# `first-person-shooter`
 
 A first-person shooter game foundation made with [LUME](https://lume.io/),
 [Solid.js](https://solidjs.com/) (and libs), and
@@ -11,7 +11,7 @@ Meteor.js. Eventually it will be skinnable, moddable, and more.
 
 # Demo
 
-https://first-person-shooter.meteorapp.com
+https://first-person-shooter.meteorapp.com (share it for multiplayer)
 
 # Run it
 
