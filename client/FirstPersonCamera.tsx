@@ -103,6 +103,8 @@ export class FirstPersonCamera {
 			// console.log('scene?', scene)
 
 			const onmove = (e: PointerEvent) => {
+				// TODO movementX/Y don't work in iOS yet, we need to calculate movementX/Y ourselves.
+				// https://bugs.webkit.org/show_bug.cgi?id=248119
 				this.camRotation.y -= e.movementX * 0.1
 				this.camRotation.x = clamp(this.camRotation.x + e.movementY * 0.1, -90, 90)
 
