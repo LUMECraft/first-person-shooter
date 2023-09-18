@@ -9,9 +9,11 @@ FPS games written declaratively using LUME's 3D HTML elements with Solid.js
 templating and reactivity, and realtime multiplayer connectivity powered by
 Meteor.js. Eventually it will be skinnable, moddable, and more.
 
+<!--
 # Demo
 
 https://first-person-shooter.meteorapp.com (share it for multiplayer)
+-->
 
 # Run it
 
