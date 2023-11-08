@@ -9,3 +9,5 @@ public/docs
 .vscode/
 
 *.log
+
+package-lock.json

@@ -4,7 +4,9 @@
 		"checkJs": true,
 		// "declaration": false,
 		"rootDir": "./",
-		"jsxImportSource": "@lume/element"
+		"jsxImportSource": "@lume/element",
+		"jsx": "preserve",
+		"experimentalDecorators": true
 	},
 
 	"include": ["src/**/*.js", "src/**/*.ts", "src/**/*.tsx"]
