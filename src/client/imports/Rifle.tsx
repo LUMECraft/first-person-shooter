@@ -1,12 +1,12 @@
 import {component, Props, reactive, signal} from 'classy-solid'
 import throttle from 'lodash.throttle'
 import type {Box, Node} from 'lume'
-import {createMutable} from 'solid-js/store'
+// import {createMutable} from 'solid-js/store'
 import {createEffect, onCleanup} from 'solid-js'
 
 @component
 @reactive
-export class Rifle {
+class Rifle {
 	PropTypes!: Props<this, 'shootOnClick' | 'onShoot'>
 
 	/**
@@ -104,7 +104,7 @@ export class Rifle {
 	shoot = this._shoot
 
 	constructor() {
-		return createMutable(this)
+		// return createMutable(this)
 	}
 
 	root!: Node
@@ -112,36 +112,40 @@ export class Rifle {
 	tracer!: Box
 	explosion!: Node
 
-	template = () => (
-		<lume-node ref={this.root} position="0 0 -40" scale="0.8 0.8 0.8">
-			{/* rifle model */}
-			<lume-fbx-model src="/gun.fbx" rotation="0 -90 0" scale="0.2 0.2 0.2"></lume-fbx-model>
+	template = () => {
+		return (
+			<lume-node ref={this.root} position="0 0 -40" scale="0.8 0.8 0.8">
+				{/* rifle model */}
+				<lume-fbx-model src="/gun.fbx" rotation="0 -90 0" scale="0.2 0.2 0.2"></lume-fbx-model>
 
-			<lume-node position="0 -105 -260">
-				{/* muzzle flash */}
-				<lume-sphere
-					ref={this.explosion}
-					visible="false"
-					has="basic-material"
-					opacity="0.5"
-					size="100 100 100"
-					color="yellow"
-					mount-point="0.5 0.5 1"
-				></lume-sphere>
+				<lume-node position="0 -105 -260">
+					{/* muzzle flash */}
+					<lume-sphere
+						ref={this.explosion}
+						visible="false"
+						has="basic-material"
+						opacity="0.5"
+						size="100 100 100"
+						color="yellow"
+						mount-point="0.5 0.5 1"
+					></lume-sphere>
 
-				{/* bullet tracer */}
-				<lume-box
-					ref={this.tracer}
-					visible="false"
-					has="basic-material"
-					opacity="0.6"
-					size="8 8 8000"
-					color="white"
-					mount-point="0.5 0.5 1"
-				></lume-box>
+					{/* bullet tracer */}
+					<lume-box
+						ref={this.tracer}
+						visible="false"
+						has="basic-material"
+						opacity="0.6"
+						size="8 8 8000"
+						color="white"
+						mount-point="0.5 0.5 1"
+					></lume-box>
+				</lume-node>
+
+				<audio ref={this.gunshot} src="/gunshot.mp3"></audio>
 			</lume-node>
-
-			<audio ref={this.gunshot} src="/gunshot.mp3"></audio>
-		</lume-node>
-	)
+		)
+	}
 }
+
+export {Rifle}

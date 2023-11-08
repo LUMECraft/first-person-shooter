@@ -1,7 +1,7 @@
 import {component, Props, reactive, signal} from 'classy-solid'
 import createThrottle from '@solid-primitives/throttle'
 import {clamp, Motor, Node, toRadians, XYZNumberValues, THREE, PerspectiveCamera} from 'lume'
-import {createMutable} from 'solid-js/store'
+// import {createMutable} from 'solid-js/store'
 import {createEffect, onCleanup, JSX, batch} from 'solid-js'
 import {render} from 'solid-js/web'
 import {Vector2} from 'three/src/math/Vector2'
@@ -11,12 +11,15 @@ const caster = new Raycaster()
 
 @component
 @reactive
-export class FirstPersonCamera {
+class FirstPersonCamera {
 	PropTypes!: Props<this, 'onPlayerMove' | 'crouchAmount' | 'elementsToIntersect' | 'onIntersect' | 'autoIntersect'>
+
 	@signal onPlayerMove:
 		| ((pos: {x: number; y: number; z: number; rx: number; ry: number; crouch: boolean}) => void)
 		| null = null
+
 	crouchAmount = 0
+
 	@signal elementsToIntersect: Set<Node> | null = null
 
 	// TODO we need ability to specify {equals: false} for @signal decorator so we don't have to make a new array each time we update it.
@@ -72,6 +75,7 @@ export class FirstPersonCamera {
 		const {x, y, z} = this.camPosition
 		const {x: rx, y: ry} = this.camRotation
 		const crouch = !!this.__crouchAmount
+		console.log('call on player move', x, y, z, rx, ry, crouch)
 		this.onPlayerMove?.({x, y, z, rx, ry, crouch})
 	}
 
@@ -95,6 +99,7 @@ export class FirstPersonCamera {
 		createEffect(() => (this.camPosition.y = this.__crouchAmount))
 
 		createEffect(() => {
+			console.log('10')
 			const scene = this.root.scene
 
 			if (!scene) return
@@ -106,6 +111,7 @@ export class FirstPersonCamera {
 				this.camRotation.y -= e.movementX * 0.1
 				this.camRotation.x = clamp(this.camRotation.x + e.movementY * 0.1, -90, 90)
 
+				debugger
 				this.__playerMove()
 			}
 
@@ -200,6 +206,7 @@ export class FirstPersonCamera {
 		})
 
 		createEffect(() => {
+			console.log('11')
 			if (!this.autoIntersect) return
 
 			// Any time these change,
@@ -235,7 +242,8 @@ export class FirstPersonCamera {
 			if (!this.elementsToIntersect) return
 
 			const intersections = caster.intersectObjects(
-				[...this.elementsToIntersect]
+				// [...this.elementsToIntersect] // broken in Quest Browser
+				Array.from(this.elementsToIntersect)
 					.map(el => el?.three)
 					// fixme bug: undefined values getting in here. This whole thing is a quick hack for Solid Hack. :]
 					.filter(o => !!o),
@@ -277,9 +285,15 @@ export class FirstPersonCamera {
 		//
 		// TODO Commenting this out breaks player position synchronization for some
 		// reason, no idea why yet. haha.
-		return createMutable(this)
+		// TODO this doesn't work with new @signal yet, because...
+		// console.log('descriptor before:', Object.getOwnPropertyDescriptor(this, 'onPlayerMove'))
+		// const self = createMutable(this)
+		// console.log('descriptor after:', Object.getOwnPropertyDescriptor(this, 'onPlayerMove'))
+		// return self
 	}
 }
+
+export {FirstPersonCamera}
 
 async function shadow(el: Element, args: () => JSX.Element | [JSX.Element, ShadowRootInit] | true) {
 	const _args = args()

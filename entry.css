@@ -13,7 +13,7 @@ lume-scene {
 	position: absolute;
 }
 
-lume-node {
+lume-element3d {
 	pointer-events: none;
 }
 

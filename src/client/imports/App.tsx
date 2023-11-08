@@ -36,15 +36,16 @@ import {Rifle} from './Rifle'
 import {reactive, signal, component, Props, createSignalObject, createSignalFunction} from 'classy-solid'
 import {FirstPersonCamera} from './FirstPersonCamera'
 import {Lights} from './Lights'
-import {Player, playersCollection} from '../imports/collections/players'
-import {MapItem, mapItems} from '../imports/collections/mapItems'
+import {Player, playersCollection} from '../../imports/collections/players'
+import {MapItem, mapItems} from '../../imports/collections/mapItems'
 
+console.log('define elements')
 // Define all the LUME elements with their default names.
 defineElements()
 
 @component
 @reactive
-export class App {
+class App {
 	PropTypes!: Props<this, never> // never means no JSX props
 
 	@signal playerId = ''
@@ -67,21 +68,26 @@ export class App {
 	onMount() {
 		// join player to the match
 		Meteor.call('addPlayer', (_error: any, id: string) => {
-			queueMicrotask(() => (this.playerId = id))
+			queueMicrotask(() => {
+				debugger
+				return (this.playerId = id)
+			})
 			window.addEventListener('unload', () => Meteor.call('disconnect', id))
 		})
 
 		trackerAutorun(() => (this.players = playersCollection.find().fetch()))
 		trackerAutorun(() => (this.mapItems = mapItems.find().fetch()))
 		createEffect(() => {
+			console.log('1')
 			this.playerId
 			trackerAutorun(() => {
 				this.health = playersCollection.findOne(this.playerId)?.health ?? 100
-				console.log('health:', this.health)
+				// console.log('health:', this.health)
 			})
 		})
 
 		createEffect(() => {
+			console.log('2')
 			if (!this.playerId) return
 			// if no more life, die, refresh browser to respawn.
 			if (this.health <= 0) {
@@ -95,17 +101,20 @@ export class App {
 		})
 
 		createEffect(() => {
+			console.log('3')
 			if (!this.playerId) return
 			trackerAutorun(() => (this.player = playersCollection.findOne({id: this.playerId})))
 		})
 
 		createEffect(() => {
+			console.log('4')
 			if (!this.playerId) return
 			const int = setInterval(() => Meteor.call('heartbeat', this.playerId), 1000)
 			onCleanup(() => clearInterval(int))
 		})
 
 		createEffect(() => {
+			console.log('5')
 			if (!this.player) return
 
 			this.head.on(Events.MODEL_LOAD, () => {
@@ -123,6 +132,7 @@ export class App {
 		})
 
 		createEffect(() => {
+			console.log('6')
 			// Assume bullet hits only the first person it reaches.
 			const unluckyPlayerId = untrack(() => this.playerElements)
 				.get()
@@ -134,6 +144,7 @@ export class App {
 
 		// Random initial placement for player
 		createEffect(() => {
+			console.log('7')
 			if (!this.camera()) return
 
 			// start in a random place
@@ -158,9 +169,13 @@ export class App {
 
 	camera = createSignalFunction<FirstPersonCamera>()
 
+	@signal count = 123
+
 	template() {
+		setInterval(() => this.count++, 1000)
 		return (
 			<>
+				<h1>Count: {this.count}</h1>
 				<lume-scene ref={this.scene} perspective="800" webgl enable-css="false" shadowmap-type="pcfsoft">
 					<lume-node size-mode="proportional proportional" size="1 1">
 						<Lights />
@@ -192,7 +207,7 @@ export class App {
 								crouchAmount={this.crouchAmount}
 								elementsToIntersect={new Set(this.playerElements.get().keys())}
 								// TODO we should be able to instead createEffect(() => camera.intersectedElements) but that currently doesn't work.
-								onIntersect={(els: Node[]) => (this.intersectedElements = els)}
+								onIntersect={(els: Node[]) => (this.intersectedElements = els ?? [])}
 								autoIntersect={false} // we'll tell it when to intersect, which will be only when we shoot.
 							>
 								<lume-node position="40 120 -100" slot="camera-child">
@@ -200,6 +215,7 @@ export class App {
 										shootOnClick={true}
 										shotThrottle={400}
 										onShoot={() => {
+											if (!this.camera()) return
 											// Quick hacky: In an proper game, shot intersection would probably be detected by the server instead of the client to avoid cheating?
 											this.camera()!.intersect()
 											Meteor.call('shoot', this.playerId)
@@ -242,6 +258,7 @@ export class App {
 										let firstRun = true
 
 										createEffect(() => {
+											console.log('8')
 											if (!shots() || !rifle()) return
 											if (firstRun) return (firstRun = false)
 
@@ -249,6 +266,7 @@ export class App {
 										})
 
 										createEffect(() => {
+											console.log('9')
 											if (!player().connected) return
 
 											head.on(Events.MODEL_LOAD, () => {
@@ -362,6 +380,8 @@ export class App {
 		)
 	}
 }
+
+export {App}
 
 const mapItemScales = {
 	tree: 2,

@@ -7,15 +7,5 @@
 		"jsxImportSource": "@lume/element"
 	},
 
-	"include": [
-		"client/**/*.js",
-		"client/**/*.ts",
-		"client/**/*.tsx",
-		"server/**/*.js",
-		"server/**/*.ts",
-		"server/**/*.tsx",
-		"imports/**/*.js",
-		"imports/**/*.ts",
-		"imports/**/*.tsx"
-	]
+	"include": ["src/**/*.js", "src/**/*.ts", "src/**/*.tsx"]
 }
