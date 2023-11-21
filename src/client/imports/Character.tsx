@@ -3,6 +3,7 @@ import {component, Props} from 'classy-solid'
 import type {Node} from 'lume'
 import {createMutable} from 'solid-js/store'
 
+export
 @component
 // @reactive
 class Character {
@@ -44,5 +45,3 @@ class Character {
 		)
 	}
 }
-
-export {Character}

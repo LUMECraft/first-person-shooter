@@ -43,6 +43,7 @@ console.log('define elements')
 // Define all the LUME elements with their default names.
 defineElements()
 
+export
 @component
 @reactive
 class App {
@@ -380,8 +381,6 @@ class App {
 		)
 	}
 }
-
-export {App}
 
 const mapItemScales = {
 	tree: 2,

@@ -4,6 +4,7 @@ import type {Box, Node} from 'lume'
 // import {createMutable} from 'solid-js/store'
 import {createEffect, onCleanup} from 'solid-js'
 
+export
 @component
 @reactive
 class Rifle {
@@ -147,5 +148,3 @@ class Rifle {
 		)
 	}
 }
-
-export {Rifle}

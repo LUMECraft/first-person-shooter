@@ -9,6 +9,7 @@ import {Vector2} from 'three/src/math/Vector2'
 const {Raycaster} = THREE
 const caster = new Raycaster()
 
+export
 @component
 @reactive
 class FirstPersonCamera {
@@ -294,8 +295,6 @@ class FirstPersonCamera {
 		// return self
 	}
 }
-
-export {FirstPersonCamera}
 
 async function shadow(el: Element, args: () => JSX.Element | [JSX.Element, ShadowRootInit] | true) {
 	const _args = args()
