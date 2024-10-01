@@ -4,24 +4,26 @@
 # 'meteor add' and 'meteor remove' will edit this file for you,
 # but you can also edit it by hand.
 
-meteor-base@1.5.1             # Packages every Meteor app needs to have
-mobile-experience@1.1.0       # Packages for a great mobile UX
-mongo@1.15.0                   # The database Meteor supports right now
-blaze-html-templates    # Compile .html files into Meteor Blaze views
-jquery@1.11.10                  # Helpful client-side library
-tracker@1.2.0                 # Meteor's client-side reactive programming library
+meteor-base@1.5.2             # Packages every Meteor app needs to have
+mobile-experience@1.1.2       # Packages for a great mobile UX
+mongo@2.0.2                   # The database Meteor supports right now
+reactive-var@1.0.13            # Reactive variable for tracker
 
-standard-minifiers@1.1.0      # JS/CSS minifiers run for production mode
-#es5-shim@4.8.0                # ECMAScript 5 compatibility for older browsers. # disabled, not caring about old browsers for this app.
-ecmascript@0.16.2              # Enable ECMAScript2015+ syntax in app code #disabled to use the modules package instead, and we compile source with @lume/cli
+standard-minifier-css@1.9.3   # CSS minifier run for production mode
+standard-minifier-js@3.0.0    # JS minifier run for production mode
+#es5-shim@4.8.1                # ECMAScript 5 compatibility for older browsers. # disabled, not caring about old browsers for this app.
+ecmascript@0.16.9              # Enable ECMAScript2015+ syntax in app code #disabled to use the modules package instead, and we compile source with @lume/cli
+#typescript@5.4.3              # Enable TypeScript syntax in .ts and .tsx modules
 #modules@0.18.0
+shell-server@0.6.0            # Server-side component of the `meteor shell` command
 
-autopublish@1.0.7             # Publish all data to the clients (for prototyping)
-insecure@1.0.7                # Allow all DB writes from clients (for prototyping)
+static-html@1.3.3             # Define static page content in .html files
 
-shell-server@0.5.0
-dynamic-import@0.7.2
-#underscore@1.0.10
-autoupdate@1.8.0
-#typescript@4.5.4
-reactive-var@1.0.11
+autopublish@1.0.8             # Publish all data to the clients (for prototyping)
+insecure@1.0.8                # Allow all DB writes from clients (for prototyping)
+
+#dynamic-import@0.7.4
+#autoupdate@2.0.0
+
+#blaze-html-templates    # Compile .html files into Meteor Blaze views
+#jquery@1.11.10                  # Helpful client-side library

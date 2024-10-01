@@ -1,19 +1,36 @@
-import {component, Props, reactive, signal} from 'classy-solid'
+import {component, type Props, reactive, signal} from 'classy-solid'
 import createThrottle from '@solid-primitives/throttle'
-import {clamp, Motor, Node, toRadians, XYZNumberValues, THREE, PerspectiveCamera} from 'lume'
+import {clamp, Motor, Element3D, toRadians, XYZNumberValues, PerspectiveCamera} from 'lume'
+import {Raycaster} from 'three'
 // import {createMutable} from 'solid-js/store'
 import {createEffect, onCleanup, JSX, batch} from 'solid-js'
 import {render} from 'solid-js/web'
 import {Vector2} from 'three/src/math/Vector2'
 
-const {Raycaster} = THREE
 const caster = new Raycaster()
 
 export
 @component
 @reactive
 class FirstPersonCamera {
-	PropTypes!: Props<this, 'onPlayerMove' | 'crouchAmount' | 'elementsToIntersect' | 'onIntersect' | 'autoIntersect'>
+	PropTypes!: Props<
+		Partial<this>,
+		'instance' | 'onPlayerMove' | 'crouchAmount' | 'elementsToIntersect' | 'onIntersect' | 'autoIntersect'
+	>
+
+	// TODO move this to the @component decorator
+	/**
+	 * This is similar to ref={} on regular elements. Pass in a signal setter
+	 * (or function that accepts the instance as an arg) to get an instance of
+	 * this component from JSX.
+	 *
+	 * Example:
+	 *
+	 * ```js
+	 * return <FirstPersonCamera getInstance={setCamera} />
+	 * ```
+	 */
+	@signal instance: ((i: this) => void) | null = null
 
 	@signal onPlayerMove:
 		| ((pos: {x: number; y: number; z: number; rx: number; ry: number; crouch: boolean}) => void)
@@ -21,13 +38,13 @@ class FirstPersonCamera {
 
 	crouchAmount = 0
 
-	@signal elementsToIntersect: Set<Node> | null = null
+	@signal elementsToIntersect: Set<Element3D> | null = null
 
 	// TODO we need ability to specify {equals: false} for @signal decorator so we don't have to make a new array each time we update it.
-	@signal intersectedElements: Node[] = []
+	@signal intersectedElements: Element3D[] = []
 
 	// FIXME: we shouldn't need this, but createEffect(() => camera.intersectedElements) is not working right now for some reason. We use a callback for now.
-	@signal onIntersect: ((n: Node[]) => void) | null = null
+	@signal onIntersect: ((n: Element3D[]) => void) | null = null
 
 	@signal autoIntersect = true
 
@@ -36,25 +53,26 @@ class FirstPersonCamera {
 
 	@signal __crouchAmount = this.crouchAmount
 
-	root!: Node
+	root!: Element3D
 	camera!: PerspectiveCamera
 
 	template = (props: this['PropTypes']) => {
 		// const children = props.children
 
 		return (
-			<lume-node
+			<lume-element3d
 				ref={this.root}
-				rotation={[0, this.camRotation.y]}
-				position={[this.camPosition.x, this.camPosition.y, this.camPosition.z]}
+				rotation={new XYZNumberValues([0, this.camRotation.y])}
+				position={new XYZNumberValues([this.camPosition.x, this.camPosition.y, this.camPosition.z])}
 				use:shadow={
 					<>
 						<slot></slot>
 
 						<lume-perspective-camera
 							ref={this.camera}
+							// @ts-expect-error attribute type is added in newer lume
 							active
-							rotation={[this.camRotation.x]}
+							rotation={new XYZNumberValues([this.camRotation.x])}
 							far="200000"
 							zoom={1}
 						>
@@ -68,7 +86,7 @@ class FirstPersonCamera {
 				}
 			>
 				{props.children}
-			</lume-node>
+			</lume-element3d>
 		)
 	}
 
@@ -79,20 +97,6 @@ class FirstPersonCamera {
 		console.log('call on player move', x, y, z, rx, ry, crouch)
 		this.onPlayerMove?.({x, y, z, rx, ry, crouch})
 	}
-
-	// TODO move this to the @component decorator
-	/**
-	 * This is similar to ref={} on regular elements. Pass in a signal setter
-	 * (or function that accepts the instance as an arg) to get an instance of
-	 * this component from JSX.
-	 *
-	 * Example:
-	 *
-	 * ```js
-	 * return <Rifle instance={setRifle} />
-	 * ```
-	 */
-	@signal instance: ((i: this) => void) | null = null
 
 	onMount() {
 		queueMicrotask(() => this.instance?.(this))
@@ -114,7 +118,7 @@ class FirstPersonCamera {
 				this.camRotation.y -= e.movementX * 0.1
 				this.camRotation.x = clamp(this.camRotation.x + e.movementY * 0.1, -90, 90)
 
-				debugger
+				// debugger
 				this.__playerMove()
 			}
 
@@ -150,8 +154,8 @@ class FirstPersonCamera {
 
 				keysDown[key] = true
 
-				let nextPositionZ = (dt: number) => 0
-				let nextPositionY = (dt: number) => 0
+				let nextPositionZ = (_dt: number) => 0
+				let nextPositionY = (_dt: number) => 0
 
 				if (key === 'w') {
 					nextPositionZ = dt => -Math.cos(toRadians(this.camRotation.y)) * moveSpeed * dt
@@ -170,7 +174,7 @@ class FirstPersonCamera {
 					nextPositionY = dt => Math.cos(toRadians(this.camRotation.y)) * moveSpeed * dt
 				}
 
-				Motor.addRenderTask((t, dt) => {
+				Motor.addRenderTask((_t, dt) => {
 					this.camPosition.z += nextPositionZ(dt)
 					this.camPosition.x += nextPositionY(dt)
 
@@ -213,9 +217,9 @@ class FirstPersonCamera {
 			if (!this.autoIntersect) return
 
 			// Any time these change,
-			const {x, y, z} = this.camPosition
-			const {x: rx, y: ry} = this.camRotation
-			const crouch = !!this.__crouchAmount
+			const {x: _x, y: _y, z: _z} = this.camPosition
+			const {x: _rx, y: _ry} = this.camRotation
+			this.__crouchAmount
 			this.elementsToIntersect
 
 			// schedule a raycast
@@ -325,6 +329,14 @@ async function shadow(el: Element, args: () => JSX.Element | [JSX.Element, Shado
 	const root = el.attachShadow(shadowOptions)
 	// @ts-ignore :(
 	render(shadowChildren, root)
+}
+
+declare module 'solid-js' {
+	namespace JSX {
+		interface CustomAttributes<T> {
+			'use:shadow'?: JSX.Element | typeof shadow
+		}
+	}
 }
 
 function isShadowArgTuple(a: any): a is [JSX.Element, ShadowRootInit] {

@@ -1,6 +1,7 @@
 import {ReactiveVar} from 'meteor/reactive-var'
 import {render} from 'solid-js/web'
 import {App} from './imports/App'
+import {Tracker} from 'meteor/tracker'
 
 Meteor.subscribe('players')
 

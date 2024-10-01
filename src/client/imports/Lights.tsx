@@ -1,8 +1,9 @@
-import {DirectionalLight, Motor, THREE} from 'lume'
+import {DirectionalLight, Motor} from 'lume'
+import * as THREE from 'three'
 import {createEffect, getOwner, onCleanup} from 'solid-js'
 // import {reactive, signal} from 'classy-solid'
-import {component, Props} from 'classy-solid'
-import type {Node} from 'lume'
+import {component, type Props} from 'classy-solid'
+import type {Box} from 'lume'
 import {createMutable} from 'solid-js/store'
 
 export
@@ -17,19 +18,20 @@ class Lights {
 	lightSize = 16000
 
 	// @signal
-	root!: Node
+	root!: Box
 
 	count = 456
 
 	onMount() {
 		setInterval(() => {
 			console.log('increment in Lights')
-			debugger
+			// debugger
 			this.count++
 		}, 1000)
 
 		console.log('owner?', getOwner())
-		const scene = this.root?.scene
+		// const scene =
+		this.root?.scene
 
 		createEffect(() => {
 			console.log('12')

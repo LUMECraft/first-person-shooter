@@ -1,6 +1,6 @@
-import {component, Props, reactive, signal} from 'classy-solid'
+import {component, type Props, reactive, signal} from 'classy-solid'
 import throttle from 'lodash.throttle'
-import type {Box, Node} from 'lume'
+import {isMesh, type Box, type Element3D, type Sphere} from 'lume'
 // import {createMutable} from 'solid-js/store'
 import {createEffect, onCleanup} from 'solid-js'
 
@@ -8,7 +8,7 @@ export
 @component
 @reactive
 class Rifle {
-	PropTypes!: Props<this, 'shootOnClick' | 'onShoot'>
+	PropTypes!: Props<Partial<this>, 'shootOnClick' | 'onShoot' | 'shotThrottle' | 'instance'>
 
 	/**
 	 * If true will automatically shoot when the user clicks anywhere in the scene.
@@ -73,19 +73,18 @@ class Rifle {
 			this.root.three.traverse(n => {
 				console.log('modify material????')
 
-				if (n.material) {
-					const m = n as THREE.Mesh
+				if (isMesh(n)) {
 					console.log('modify material!!')
 					// TODO this isn't firing.
 					// TODO attribute for model loaders so we don't have to manually do this to Three.js objects.
-					m.castShadow = true
-					m.receiveShadow = true
+					n.castShadow = true
+					n.receiveShadow = true
 				}
 			})
 		}, 1000)
 	}
 
-	_shoot = () => {
+	_shoot = (() => {
 		;(this.gunshot.cloneNode() as HTMLAudioElement).play()
 
 		if (Math.random() < 0.25) this.tracer.visible = true
@@ -100,7 +99,7 @@ class Rifle {
 		this.timeouts.add(timeout)
 
 		this.onShoot?.()
-	}
+	}) as ReturnType<typeof throttle>
 
 	shoot = this._shoot
 
@@ -108,18 +107,18 @@ class Rifle {
 		// return createMutable(this)
 	}
 
-	root!: Node
+	root!: Element3D
 	gunshot!: HTMLAudioElement
 	tracer!: Box
-	explosion!: Node
+	explosion!: Sphere
 
 	template = () => {
 		return (
-			<lume-node ref={this.root} position="0 0 -40" scale="0.8 0.8 0.8">
+			<lume-element3d ref={this.root} position="0 0 -40" scale="0.8 0.8 0.8">
 				{/* rifle model */}
 				<lume-fbx-model src="/gun.fbx" rotation="0 -90 0" scale="0.2 0.2 0.2"></lume-fbx-model>
 
-				<lume-node position="0 -105 -260">
+				<lume-element3d position="0 -105 -260">
 					{/* muzzle flash */}
 					<lume-sphere
 						ref={this.explosion}
@@ -141,10 +140,10 @@ class Rifle {
 						color="white"
 						mount-point="0.5 0.5 1"
 					></lume-box>
-				</lume-node>
+				</lume-element3d>
 
 				<audio ref={this.gunshot} src="/gunshot.mp3"></audio>
-			</lume-node>
+			</lume-element3d>
 		)
 	}
 }

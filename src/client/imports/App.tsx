@@ -16,7 +16,7 @@ todo
 - add match name/ID as URL query param
 */
 
-import {defineElements, Events, FbxModel, Node, Scene} from 'lume'
+import {FbxModel, Element3D, Scene, isMesh, XYZNumberValues} from 'lume'
 import {
 	batch,
 	createEffect,
@@ -30,18 +30,16 @@ import {
 	untrack,
 } from 'solid-js'
 import createThrottle from '@solid-primitives/throttle'
+import {Tracker} from 'meteor/tracker'
 import {Character} from './Character'
 import {Rifle} from './Rifle'
 // import {Tween, Easing} from '@tweenjs/tween.js'
-import {reactive, signal, component, Props, createSignalObject, createSignalFunction} from 'classy-solid'
+import {reactive, signal, component, type Props, createSignalObject, createSignalFunction} from 'classy-solid'
 import {FirstPersonCamera} from './FirstPersonCamera'
 import {Lights} from './Lights'
-import {Player, playersCollection} from '../../imports/collections/players'
-import {MapItem, mapItems} from '../../imports/collections/mapItems'
-
-console.log('define elements')
-// Define all the LUME elements with their default names.
-defineElements()
+import {type Player, playersCollection} from '../../imports/collections/players'
+import {type MapItem, mapItems} from '../../imports/collections/mapItems'
+import type {} from 'element-behaviors/src/attribute-types.solid'
 
 export
 @component
@@ -56,10 +54,10 @@ class App {
 	@signal health = 100
 	@signal dead = false
 
-	playerElements = createSignalObject(new Map<Node, string>(), {equals: false})
+	playerElements = createSignalObject(new Map<Element3D, string>(), {equals: false})
 
 	@signal mapItems: MapItem[] = []
-	@signal intersectedElements: Node[] = []
+	@signal intersectedElements: Element3D[] = []
 
 	readonly crouchAmount = 100
 
@@ -70,7 +68,7 @@ class App {
 		// join player to the match
 		Meteor.call('addPlayer', (_error: any, id: string) => {
 			queueMicrotask(() => {
-				debugger
+				// debugger
 				return (this.playerId = id)
 			})
 			window.addEventListener('unload', () => Meteor.call('disconnect', id))
@@ -118,15 +116,15 @@ class App {
 			console.log('5')
 			if (!this.player) return
 
-			this.head.on(Events.MODEL_LOAD, () => {
+			// CONTINUE test with new model load event on lume dom-events  branch
+			this.head.addEventListener('load', () => {
 				this.head.three.traverse(n => {
-					if (n.material) {
-						const m = n as THREE.Mesh
+					if (isMesh(n)) {
 						// TODO attribute for model loaders so we don't have to manually do this to Three.js objects.
-						m.castShadow = true
-						m.receiveShadow = true
-						// m.material.transparent = true
-						// m.material.opacity = 0
+						n.castShadow = true
+						n.receiveShadow = true
+						// n.material.transparent = true
+						// n.material.opacity = 0
 					}
 				})
 			})
@@ -178,7 +176,7 @@ class App {
 			<>
 				<h1>Count: {this.count}</h1>
 				<lume-scene ref={this.scene} perspective="800" webgl enable-css="false" shadowmap-type="pcfsoft">
-					<lume-node size-mode="proportional proportional" size="1 1">
+					<lume-element3d size-mode="proportional proportional" size="1 1">
 						<Lights />
 
 						{/* sky */}
@@ -201,17 +199,16 @@ class App {
 
 						{/* TODO better loading experience */}
 						<Show when={this.player} fallback={<lume-box size="200 200 200" color="pink"></lume-box>}>
-							{/* @ts-expect-error JSX type in classy-solid needs update */}
 							<FirstPersonCamera
 								instance={this.camera}
 								onPlayerMove={this.onPlayerMove[0]}
 								crouchAmount={this.crouchAmount}
 								elementsToIntersect={new Set(this.playerElements.get().keys())}
 								// TODO we should be able to instead createEffect(() => camera.intersectedElements) but that currently doesn't work.
-								onIntersect={(els: Node[]) => (this.intersectedElements = els ?? [])}
+								onIntersect={(els: Element3D[]) => (this.intersectedElements = els ?? [])}
 								autoIntersect={false} // we'll tell it when to intersect, which will be only when we shoot.
 							>
-								<lume-node position="40 120 -100" slot="camera-child">
+								<lume-element3d position="40 120 -100" slot="camera-child">
 									<Rifle
 										shootOnClick={true}
 										shotThrottle={400}
@@ -222,10 +219,10 @@ class App {
 											Meteor.call('shoot', this.playerId)
 										}}
 									/>
-								</lume-node>
+								</lume-element3d>
 
 								{/* This is the current player's head, but we don't need to show it in first-person PoV. */}
-								<lume-node
+								<lume-element3d
 									position="0 320 50"
 									rotation="0 180 0"
 									scale="0.48 0.48 0.48"
@@ -236,12 +233,12 @@ class App {
 										rotation="0 0 0"
 										src="/ChuckChuck/head.fbx"
 									></lume-fbx-model>
-								</lume-node>
+								</lume-element3d>
 
 								{/* move player body backward just a tad for better view when looking down */}
-								<lume-node position="0 0 40">
+								<lume-element3d position="0 0 40">
 									<Character />
-								</lume-node>
+								</lume-element3d>
 							</FirstPersonCamera>
 
 							<Index each={this.players}>
@@ -251,7 +248,7 @@ class App {
 
 									const [rifle, setRifle] = createSignal<Rifle>()
 									let head!: FbxModel
-									let playerElement!: Node
+									let playerElement!: Element3D
 
 									onMount(() => {
 										const shots = createMemo(() => player().shots)
@@ -264,19 +261,19 @@ class App {
 											if (firstRun) return (firstRun = false)
 
 											rifle()!.shoot()
+											return undefined
 										})
 
 										createEffect(() => {
 											console.log('9')
 											if (!player().connected) return
 
-											head.on(Events.MODEL_LOAD, () => {
+											head.addEventListener('load', () => {
 												head.three.traverse(n => {
-													if (n.material) {
-														const m = n as THREE.Mesh
+													if (isMesh(n)) {
 														// TODO attribute for model loaders so we don't have to manually do this to Three.js objects.
-														m.castShadow = true
-														m.receiveShadow = true
+														n.castShadow = true
+														n.receiveShadow = true
 													}
 												})
 											})
@@ -297,17 +294,17 @@ class App {
 												return <></>
 											})}
 										>
-											<lume-node
+											<lume-element3d
 												ref={playerElement}
-												rotation={[0, player().ry]}
-												position={[player().x, player().y, player().z]}
+												rotation={new XYZNumberValues([0, player().ry])}
+												position={new XYZNumberValues([player().x, player().y, player().z])}
 											>
-												<lume-node rotation={[player().rx]}>
-													<lume-node position="40 120 -100">
+												<lume-element3d rotation={new XYZNumberValues([player().rx])}>
+													<lume-element3d position="40 120 -100">
 														<Rifle instance={setRifle} />
-													</lume-node>
+													</lume-element3d>
 
-													<lume-node
+													<lume-element3d
 														position="0 320 0"
 														rotation="0 180 0"
 														scale="0.48 0.48 0.48"
@@ -318,11 +315,11 @@ class App {
 															rotation="0 0 0"
 															src="/ChuckChuck/head.fbx"
 														></lume-fbx-model>
-													</lume-node>
-												</lume-node>
+													</lume-element3d>
+												</lume-element3d>
 
 												<Character />
-											</lume-node>
+											</lume-element3d>
 										</Show>
 									)
 								}}
@@ -335,14 +332,13 @@ class App {
 								const scale = mapItemScales[item().type]
 								let model!: FbxModel
 
-								// model.on(Events.MODEL_LOAD, () => {
+								// model.addEventListener('load', () => {
 								setTimeout(() => {
 									model.three.traverse(n => {
-										if (n.material) {
-											const m = n as THREE.Mesh
+										if (isMesh(n)) {
 											// TODO attribute for model loaders so we don't have to manually do this to Three.js objects.
-											m.castShadow = true
-											m.receiveShadow = true
+											n.castShadow = true
+											n.receiveShadow = true
 										}
 									})
 								}, 1000)
@@ -350,14 +346,14 @@ class App {
 								return (
 									<lume-fbx-model
 										ref={model}
-										position={[item().x, 320, item().z]}
+										position={new XYZNumberValues([item().x, 320, item().z])}
 										src={`/${item().type}.fbx`}
-										scale={[scale, scale, scale]}
+										scale={new XYZNumberValues([scale, scale, scale])}
 									></lume-fbx-model>
 								)
 							}}
 						</Index>
-					</lume-node>
+					</lume-element3d>
 				</lume-scene>
 
 				<div class="overlay">

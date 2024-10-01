@@ -1,18 +1,19 @@
-import {Player, playersCollection} from '../imports/collections/players'
-import createDebounce, {DebouncedFunction} from '@solid-primitives/debounce'
+import {type Player, playersCollection} from '../imports/collections/players'
+import createDebounce, {type DebouncedFunction} from '@solid-primitives/debounce'
 import {mapItems} from '../imports/collections/mapItems'
 
 // TODO This is all currently naive and unoptimized, easy to hack/cheat from the client.
 
 let playerId = -1
 
-playersCollection.remove({})
+// playersCollection.remove({})
+await playersCollection.removeAsync({})
 
 // const playerConnectionResetTimeouts = new ReactiveDict<Record<string, () => void>>() // TODO Meteor ReactiveDict is broken, report it.
 const playerConnectionResetTimeouts = new Map<string, DebouncedFunction<any>>() // Map works.
 
 Meteor.methods({
-	addPlayer() {
+	async addPlayer() {
 		playerId++
 		const id = playerId.toString()
 
@@ -39,7 +40,8 @@ Meteor.methods({
 			connected: true,
 		}
 
-		playersCollection.insert(newPlayer)
+		// playersCollection.insert(newPlayer)
+		await playersCollection.insertAsync(newPlayer)
 
 		// TODO This is very naive player connection timeout kicking after 5
 		// seconds of inactivity without features such as blocking the time
@@ -47,7 +49,8 @@ Meteor.methods({
 		playerConnectionResetTimeouts.set(
 			id,
 			createDebounce(
-				Meteor.bindEnvironment(() => disconnect(id)),
+				// Meteor.bindEnvironment(() => disconnect(id)),
+				() => disconnect(id),
 				5000,
 			),
 		)
@@ -60,31 +63,36 @@ Meteor.methods({
 	},
 
 	// TODO This is totally not cheat proof. Any client can call this with the ID of any payer, for example.
-	disconnect(id) {
-		disconnect(id)
+	async disconnect(id) {
+		await disconnect(id)
 	},
 
-	updatePlayer({id, x, y, z, rx, ry, crouch}: Pick<Player, 'id' | 'x' | 'y' | 'z' | 'rx' | 'ry' | 'crouch'>) {
-		playersCollection.update(id, {$set: {x, y, z, rx, ry, crouch}})
+	async updatePlayer({id, x, y, z, rx, ry, crouch}: Pick<Player, 'id' | 'x' | 'y' | 'z' | 'rx' | 'ry' | 'crouch'>) {
+		// playersCollection.update(id, {$set: {x, y, z, rx, ry, crouch}})
+		await playersCollection.updateAsync(id, {$set: {x, y, z, rx, ry, crouch}})
 	},
 
-	shoot(id) {
-		playersCollection.update(id, {$inc: {shots: 1}})
+	async shoot(id) {
+		// playersCollection.update(id, {$inc: {shots: 1}})
+		await playersCollection.updateAsync(id, {$inc: {shots: 1}})
 	},
 
-	hit(id) {
+	async hit(id) {
 		// playersCollection.update(id, {$inc: {health: -20}})
-		playersCollection.update(id, {$inc: {health: -100}})
+		// playersCollection.update(id, {$inc: {health: -100}})
+		await playersCollection.updateAsync(id, {$inc: {health: -100}})
 		// ^ FIXME for now one shot kills. For some reason reactivity stops tracking after a player is hit with the first shot, so take all life away at once, for now.
 
-		console.log('lower player health:', id, playersCollection.findOne(id)?.health)
+		// console.log('lower player health:', id, playersCollection.findOne(id)?.health)
+		console.log('lower player health:', id, (await playersCollection.findOneAsync(id))?.health)
 	},
 })
 
-function disconnect(id) {
+async function disconnect(id: string) {
 	playerConnectionResetTimeouts.get(id)?.clear()
 	playerConnectionResetTimeouts.delete(id)
-	playersCollection.update(id, {$set: {connected: false}})
+	// playersCollection.update(id, {$set: {connected: false}})
+	await playersCollection.updateAsync(id, {$set: {connected: false}})
 }
 
 // TODO optimize
@@ -94,7 +102,8 @@ Meteor.publish('players', function () {
 
 /// generate map
 
-mapItems.remove({})
+// mapItems.remove({})
+await mapItems.removeAsync({})
 
 Meteor.publish('mapItems', function () {
 	return mapItems.find()
@@ -103,10 +112,16 @@ Meteor.publish('mapItems', function () {
 const playArea = 16000
 const mapItemTypes = ['tree', 'stone', 'shrub', 'shrub2', 'big_tree'] as const
 
+const promises = []
+
 for (let i = 0; i < 30; i += 1) {
-	mapItems.insert({
-		type: mapItemTypes[Math.round((mapItemTypes.length - 1) * Math.random())],
-		x: playArea * Math.random() - playArea / 2,
-		z: playArea * Math.random() - playArea / 2,
-	})
+	promises.push(
+		mapItems.insertAsync({
+			type: mapItemTypes[Math.round((mapItemTypes.length - 1) * Math.random())],
+			x: playArea * Math.random() - playArea / 2,
+			z: playArea * Math.random() - playArea / 2,
+		}),
+	)
 }
+
+await Promise.all(promises)
