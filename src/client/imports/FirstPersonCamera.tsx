@@ -106,7 +106,6 @@ class FirstPersonCamera {
 				this.camRotation.y -= e.movementX * 0.1
 				this.camRotation.x = clamp(this.camRotation.x + e.movementY * 0.1, -90, 90)
 
-				// debugger
 				this.__playerMove()
 			}
 

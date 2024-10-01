@@ -34,7 +34,15 @@ import {Tracker} from 'meteor/tracker'
 import {Character} from './Character'
 import {Rifle} from './Rifle'
 // import {Tween, Easing} from '@tweenjs/tween.js'
-import {reactive, signal, component, type Props, createSignalObject, createSignalFunction} from 'classy-solid'
+import {
+	reactive,
+	signal,
+	component,
+	type Props,
+	createSignalObject,
+	type SignalObject,
+	createSignalFunction,
+} from 'classy-solid'
 import {FirstPersonCamera} from './FirstPersonCamera'
 import {Lights} from './Lights'
 import {type Player, playersCollection} from '../../imports/collections/players'
@@ -49,7 +57,7 @@ class App {
 
 	@signal playerId = ''
 	@signal player: Player | undefined = undefined
-	@signal players: Player[] = []
+	@signal players: Pick<Player, 'id'>[] = []
 
 	@signal health = 100
 	@signal dead = false
@@ -67,20 +75,17 @@ class App {
 	onMount() {
 		// join player to the match
 		Meteor.call('addPlayer', (_error: any, id: string) => {
-			queueMicrotask(() => {
-				// debugger
-				return (this.playerId = id)
-			})
+			queueMicrotask(() => (this.playerId = id))
 			window.addEventListener('unload', () => Meteor.call('disconnect', id))
 		})
 
-		trackerAutorun(() => (this.players = playersCollection.find().fetch()))
+		trackerAutorun(() => (this.players = playersCollection.find({}, {fields: {id: 1}}).fetch()))
 		trackerAutorun(() => (this.mapItems = mapItems.find().fetch()))
+
 		createEffect(() => {
 			this.playerId
 			trackerAutorun(() => {
 				this.health = playersCollection.findOne(this.playerId)?.health ?? 100
-				console.log('health:', this.health)
 			})
 		})
 
@@ -130,7 +135,6 @@ class App {
 			// Assume bullet hits only the first person it reaches.
 			const unluckyPlayerId = this.playerElements.get().get(this.intersectedElements[0])
 			if (!unluckyPlayerId) return
-			console.log('player shot:', unluckyPlayerId)
 			Meteor.call('hit', unluckyPlayerId)
 		})
 
@@ -229,118 +233,18 @@ class App {
 						</FirstPersonCamera>
 
 						<Index each={this.players}>
-							{player => {
-								const id = player().id
-								if (id === this.playerId) return null
-
-								const [rifle, setRifle] = createSignal<Rifle>()
-								let head!: FbxModel
-								let playerElement!: Element3D
-
-								onMount(() => {
-									const shots = createMemo(() => player().shots)
-
-									let firstRun = true
-
-									createEffect(() => {
-										if (!shots() || !rifle()) return
-										if (firstRun) return (firstRun = false)
-
-										rifle()!.shoot()
-										return undefined
-									})
-
-									createEffect(() => {
-										if (!player().connected) return
-
-										// head.addEventListener('load', () => {
-										head.on('MODEL_LOAD', () => {
-											head.three.traverse(n => {
-												if (isMesh(n)) {
-													// TODO attribute for model loaders so we don't have to manually do this to Three.js objects.
-													n.castShadow = true
-													n.receiveShadow = true
-												}
-											})
-										})
-									})
-
-									this.playerElements.get().set(playerElement, id)
-									this.playerElements.set(v => v) // trigger reactivity
-								})
-
-								return (
-									// The rotation/position attributes here are essentially duplicate of what <FirstPersonCamera> is doing.
-									// TODO: consolidate the duplication
-									<Show
-										when={player().connected}
-										fallback={untrack(() => {
-											this.playerElements.get().delete(playerElement)
-											this.playerElements.set(v => v) // trigger reactivity
-											return <></>
-										})}
-									>
-										<lume-element3d
-											ref={playerElement}
-											rotation={new XYZNumberValues([0, player().ry])}
-											position={new XYZNumberValues([player().x, player().y, player().z])}
-										>
-											<lume-element3d rotation={new XYZNumberValues([player().rx])}>
-												<lume-element3d position="40 120 -100">
-													<Rifle instance={setRifle} />
-												</lume-element3d>
-
-												<lume-element3d
-													position="0 320 0"
-													rotation="0 180 0"
-													scale="0.48 0.48 0.48"
-													slot="camera-child"
-												>
-													<lume-fbx-model
-														ref={head}
-														rotation="0 0 0"
-														src="/ChuckChuck/head.fbx"
-													></lume-fbx-model>
-												</lume-element3d>
-											</lume-element3d>
-
-											<Character />
-										</lume-element3d>
-									</Show>
-								)
-							}}
+							{player => (
+								<PlayerComp
+									thisPlayerId={this.playerId}
+									player={player()}
+									playerElements={this.playerElements}
+								/>
+							)}
 						</Index>
 					</Show>
 
 					{/* map */}
-					<Index each={this.mapItems}>
-						{item => {
-							const scale = mapItemScales[item().type]
-							let model!: FbxModel
-
-							onMount(() => {
-								// model.addEventListener('load', () => {
-								model.on('MODEL_LOAD', () => {
-									model.three.traverse(n => {
-										if (isMesh(n)) {
-											// TODO attribute for model loaders so we don't have to manually do this to Three.js objects.
-											n.castShadow = true
-											n.receiveShadow = true
-										}
-									})
-								})
-							})
-
-							return (
-								<lume-fbx-model
-									ref={model}
-									position={new XYZNumberValues([item().x, 320, item().z])}
-									src={`/${item().type}.fbx`}
-									scale={new XYZNumberValues([scale, scale, scale])}
-								></lume-fbx-model>
-							)
-						}}
-					</Index>
+					<Index each={this.mapItems}>{item => <MapItemComp item={item()} />}</Index>
 				</lume-element3d>
 			</lume-scene>
 
@@ -380,4 +284,116 @@ function trackerAutorun(effect: () => void) {
 		effect()
 	})
 	if (getOwner()) onCleanup(() => computation.stop())
+}
+
+function PlayerComp(props: {
+	thisPlayerId: string
+	player: Pick<Player, 'id'>
+	playerElements: SignalObject<Map<Element3D, string>>
+}) {
+	let head!: FbxModel
+	let playerElement!: Element3D
+
+	const [player, setPlayer] = createSignal<Player>()
+	const [rifle, setRifle] = createSignal<Rifle>()
+	const id = createMemo(() => props.player.id)
+
+	onMount(() => {
+		createEffect(() => {
+			if (id() === props.thisPlayerId) return
+
+			trackerAutorun(() => {
+				setPlayer(playersCollection.findOne({id: id()})!)
+			})
+
+			const connected = createMemo(() => !!player()?.connected)
+			const shots = createMemo(() => player()?.shots ?? 0)
+
+			createEffect(() => {
+				if (!connected()) return
+
+				let firstRun = true
+
+				createEffect(() => {
+					if (!shots() || !rifle()) return
+					if (firstRun) return (firstRun = false)
+
+					rifle()!.shoot()
+					return undefined
+				})
+
+				createEffect(() => {
+					untrack(() => props.playerElements.get().set(playerElement, id()))
+					props.playerElements.set(v => v) // trigger reactivity
+
+					onCleanup(() => {
+						props.playerElements.get().delete(playerElement)
+						props.playerElements.set(v => v) // trigger reactivity
+					})
+				})
+
+				// head.addEventListener('load', () => {
+				head.on('MODEL_LOAD', () => {
+					head.three.traverse(n => {
+						if (isMesh(n)) {
+							// TODO attribute for model loaders so we don't have to manually do this to Three.js objects.
+							n.castShadow = true
+							n.receiveShadow = true
+						}
+					})
+				})
+			})
+		})
+	})
+
+	return (
+		// The rotation/position attributes here are essentially duplicate of what <FirstPersonCamera> is doing.
+		// TODO: consolidate the duplication
+		<Show when={id() !== props.thisPlayerId && player()?.connected} fallback={<></>}>
+			<lume-element3d
+				ref={playerElement}
+				rotation={new XYZNumberValues([0, player()!.ry])}
+				position={new XYZNumberValues([player()!.x, player()!.y, player()!.z])}
+			>
+				<lume-element3d rotation={new XYZNumberValues([player()!.rx])}>
+					<lume-element3d position="40 120 -100">
+						<Rifle instance={setRifle} />
+					</lume-element3d>
+
+					<lume-element3d position="0 320 0" rotation="0 180 0" scale="0.48 0.48 0.48" slot="camera-child">
+						<lume-fbx-model ref={head} rotation="0 0 0" src="/ChuckChuck/head.fbx"></lume-fbx-model>
+					</lume-element3d>
+				</lume-element3d>
+
+				<Character />
+			</lume-element3d>
+		</Show>
+	)
+}
+
+function MapItemComp(props: {item: MapItem}) {
+	const scale = mapItemScales[props.item.type]
+	let model!: FbxModel
+
+	onMount(() => {
+		// model.addEventListener('load', () => {
+		model.on('MODEL_LOAD', () => {
+			model.three.traverse(n => {
+				if (isMesh(n)) {
+					// TODO attribute for model loaders so we don't have to manually do this to Three.js objects.
+					n.castShadow = true
+					n.receiveShadow = true
+				}
+			})
+		})
+	})
+
+	return (
+		<lume-fbx-model
+			ref={model}
+			position={new XYZNumberValues([props.item.x, 320, props.item.z])}
+			src={`/${props.item.type}.fbx`}
+			scale={new XYZNumberValues([scale, scale, scale])}
+		></lume-fbx-model>
+	)
 }

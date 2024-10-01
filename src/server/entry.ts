@@ -6,7 +6,6 @@ import {mapItems} from '../imports/collections/mapItems'
 
 let playerId = -1
 
-// playersCollection.remove({})
 await playersCollection.removeAsync({})
 
 // const playerConnectionResetTimeouts = new ReactiveDict<Record<string, () => void>>() // TODO Meteor ReactiveDict is broken, report it.
@@ -40,7 +39,6 @@ Meteor.methods({
 			connected: true,
 		}
 
-		// playersCollection.insert(newPlayer)
 		await playersCollection.insertAsync(newPlayer)
 
 		// TODO This is very naive player connection timeout kicking after 5
@@ -68,41 +66,35 @@ Meteor.methods({
 	},
 
 	async updatePlayer({id, x, y, z, rx, ry, crouch}: Pick<Player, 'id' | 'x' | 'y' | 'z' | 'rx' | 'ry' | 'crouch'>) {
-		// playersCollection.update(id, {$set: {x, y, z, rx, ry, crouch}})
 		await playersCollection.updateAsync(id, {$set: {x, y, z, rx, ry, crouch}})
 	},
 
 	async shoot(id) {
-		// playersCollection.update(id, {$inc: {shots: 1}})
 		await playersCollection.updateAsync(id, {$inc: {shots: 1}})
 	},
 
 	async hit(id) {
-		// playersCollection.update(id, {$inc: {health: -20}})
-		// playersCollection.update(id, {$inc: {health: -100}})
-		await playersCollection.updateAsync(id, {$inc: {health: -100}})
-		// ^ FIXME for now one shot kills. For some reason reactivity stops tracking after a player is hit with the first shot, so take all life away at once, for now.
-
-		// console.log('lower player health:', id, playersCollection.findOne(id)?.health)
-		console.log('lower player health:', id, (await playersCollection.findOneAsync(id))?.health)
+		await playersCollection.updateAsync(id, {$inc: {health: -40}})
 	},
 })
 
 async function disconnect(id: string) {
 	playerConnectionResetTimeouts.get(id)?.clear()
 	playerConnectionResetTimeouts.delete(id)
-	// playersCollection.update(id, {$set: {connected: false}})
-	await playersCollection.updateAsync(id, {$set: {connected: false}})
+
+	// For now delete, but later we could allow a player to reconnect, and
+	// remove after a while of disconnection.
+	// await playersCollection.updateAsync(id, {$set: {connected: false}})
+	await playersCollection.removeAsync({id})
 }
 
 // TODO optimize
 Meteor.publish('players', function () {
-	return playersCollection.find()
+	return playersCollection.find({connected: true})
 })
 
 /// generate map
 
-// mapItems.remove({})
 await mapItems.removeAsync({})
 
 Meteor.publish('mapItems', function () {
