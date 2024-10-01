@@ -2,7 +2,6 @@ import {component, type Props, reactive, signal} from 'classy-solid'
 import createThrottle from '@solid-primitives/throttle'
 import {clamp, Motor, Element3D, toRadians, XYZNumberValues, PerspectiveCamera} from 'lume'
 import {Raycaster} from 'three'
-// import {createMutable} from 'solid-js/store'
 import {createEffect, onCleanup, JSX, batch} from 'solid-js'
 import {render} from 'solid-js/web'
 import {Vector2} from 'three/src/math/Vector2'
@@ -56,45 +55,40 @@ class FirstPersonCamera {
 	root!: Element3D
 	camera!: PerspectiveCamera
 
-	template = (props: this['PropTypes']) => {
-		// const children = props.children
+	template = (props: this['PropTypes']) => (
+		<lume-element3d
+			ref={this.root}
+			rotation={new XYZNumberValues([0, this.camRotation.y])}
+			position={new XYZNumberValues([this.camPosition.x, this.camPosition.y, this.camPosition.z])}
+			use:shadow={
+				<>
+					<slot></slot>
 
-		return (
-			<lume-element3d
-				ref={this.root}
-				rotation={new XYZNumberValues([0, this.camRotation.y])}
-				position={new XYZNumberValues([this.camPosition.x, this.camPosition.y, this.camPosition.z])}
-				use:shadow={
-					<>
-						<slot></slot>
+					<lume-perspective-camera
+						ref={this.camera}
+						// @ts-expect-error attribute type is added in newer lume
+						active
+						rotation={new XYZNumberValues([this.camRotation.x])}
+						far="200000"
+						zoom={1}
+					>
+						<slot name="camera-child"></slot>
+					</lume-perspective-camera>
 
-						<lume-perspective-camera
-							ref={this.camera}
-							// @ts-expect-error attribute type is added in newer lume
-							active
-							rotation={new XYZNumberValues([this.camRotation.x])}
-							far="200000"
-							zoom={1}
-						>
-							<slot name="camera-child"></slot>
-						</lume-perspective-camera>
-
-						{/* <lume-camera-rig active rotation={[this.camRotation.x]}>
-							<slot name="camera-child"></slot>
-						</lume-camera-rig> */}
-					</>
-				}
-			>
-				{props.children}
-			</lume-element3d>
-		)
-	}
+					{/* <lume-camera-rig active rotation={[this.camRotation.x]}>
+						<slot name="camera-child"></slot>
+					</lume-camera-rig> */}
+				</>
+			}
+		>
+			{props.children}
+		</lume-element3d>
+	)
 
 	__playerMove() {
 		const {x, y, z} = this.camPosition
 		const {x: rx, y: ry} = this.camRotation
 		const crouch = !!this.__crouchAmount
-		console.log('call on player move', x, y, z, rx, ry, crouch)
 		this.onPlayerMove?.({x, y, z, rx, ry, crouch})
 	}
 
@@ -104,13 +98,9 @@ class FirstPersonCamera {
 		createEffect(() => (this.camPosition.y = this.__crouchAmount))
 
 		createEffect(() => {
-			console.log('10')
 			const scene = this.root.scene
 
 			if (!scene) return
-
-			// FIXME in LUME: root.scene gets set twice for unexpectedly, this console.log() runs twice
-			// console.log('scene?', scene)
 
 			const onmove = (e: PointerEvent) => {
 				this.camRotation.y -= e.movementX * 0.1
@@ -211,7 +201,6 @@ class FirstPersonCamera {
 		})
 
 		createEffect(() => {
-			console.log('11')
 			if (!this.autoIntersect) return
 
 			// Any time these change,
@@ -281,20 +270,6 @@ class FirstPersonCamera {
 	/** Manually tell the camera when to run intersection. */
 	intersect() {
 		this.throttledIntersect[0]()
-	}
-
-	constructor() {
-		// Experimenting with createMutable(this) vs using @signal for
-		// properties. This might be easier for making all props implicitly
-		// reactive, but more overhead.
-		//
-		// TODO Commenting this out breaks player position synchronization for some
-		// reason, no idea why yet. haha.
-		// TODO this doesn't work with new @signal yet, because...
-		// console.log('descriptor before:', Object.getOwnPropertyDescriptor(this, 'onPlayerMove'))
-		// const self = createMutable(this)
-		// console.log('descriptor after:', Object.getOwnPropertyDescriptor(this, 'onPlayerMove'))
-		// return self
 	}
 }
 

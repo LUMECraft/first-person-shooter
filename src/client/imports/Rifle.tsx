@@ -1,7 +1,6 @@
 import {component, type Props, reactive, signal} from 'classy-solid'
 import throttle from 'lodash.throttle'
-import {isMesh, type Box, type Element3D, type Sphere} from 'lume'
-// import {createMutable} from 'solid-js/store'
+import {FbxModel, isMesh, type Box, type Element3D, type Sphere} from 'lume'
 import {createEffect, onCleanup} from 'solid-js'
 
 export
@@ -41,6 +40,31 @@ class Rifle {
 
 	timeouts = new Set<number>()
 
+	root!: Element3D
+	model!: FbxModel
+	gunshot!: HTMLAudioElement
+	tracer!: Box
+	explosion!: Sphere
+
+	shoot = this._shoot.bind(this) as ReturnType<typeof throttle>
+
+	_shoot() {
+		;(this.gunshot.cloneNode() as HTMLAudioElement).play()
+
+		if (Math.random() < 0.25) this.tracer.visible = true
+		this.explosion.visible = true
+
+		const timeout = window.setTimeout(() => {
+			this.tracer.visible = false
+			this.explosion.visible = false
+			this.timeouts.delete(timeout)
+		}, 100)
+
+		this.timeouts.add(timeout)
+
+		this.onShoot?.()
+	}
+
 	onMount() {
 		queueMicrotask(() => this.instance?.(this))
 
@@ -62,88 +86,55 @@ class Rifle {
 
 		createEffect(() => {
 			if (this.shotThrottle) {
-				this.shoot = throttle(this._shoot, this.shotThrottle, {leading: true, trailing: false})
+				this.shoot = throttle(this._shoot.bind(this), this.shotThrottle, {leading: true, trailing: false})
 				onCleanup(() => this.shoot.cancel())
 			} else {
-				this.shoot = this._shoot
+				this.shoot = this._shoot.bind(this) as ReturnType<typeof throttle>
 			}
 		})
 
-		setTimeout(() => {
+		// this.model.addEventListener('load', () => {
+		this.model.on('MODEL_LOAD', () => {
 			this.root.three.traverse(n => {
-				console.log('modify material????')
-
 				if (isMesh(n)) {
-					console.log('modify material!!')
-					// TODO this isn't firing.
 					// TODO attribute for model loaders so we don't have to manually do this to Three.js objects.
 					n.castShadow = true
 					n.receiveShadow = true
 				}
 			})
-		}, 1000)
+		})
 	}
 
-	_shoot = (() => {
-		;(this.gunshot.cloneNode() as HTMLAudioElement).play()
+	template = () => (
+		<lume-element3d ref={this.root} position="0 0 -40" scale="0.8 0.8 0.8">
+			{/* rifle model */}
+			<lume-fbx-model ref={this.model} src="/gun.fbx" rotation="0 -90 0" scale="0.2 0.2 0.2"></lume-fbx-model>
 
-		if (Math.random() < 0.25) this.tracer.visible = true
-		this.explosion.visible = true
+			<lume-element3d position="0 -105 -260">
+				{/* muzzle flash */}
+				<lume-sphere
+					ref={this.explosion}
+					visible="false"
+					has="basic-material"
+					opacity="0.5"
+					size="100 100 100"
+					color="yellow"
+					mount-point="0.5 0.5 1"
+				></lume-sphere>
 
-		const timeout = window.setTimeout(() => {
-			this.tracer.visible = false
-			this.explosion.visible = false
-			this.timeouts.delete(timeout)
-		}, 100)
-
-		this.timeouts.add(timeout)
-
-		this.onShoot?.()
-	}) as ReturnType<typeof throttle>
-
-	shoot = this._shoot
-
-	constructor() {
-		// return createMutable(this)
-	}
-
-	root!: Element3D
-	gunshot!: HTMLAudioElement
-	tracer!: Box
-	explosion!: Sphere
-
-	template = () => {
-		return (
-			<lume-element3d ref={this.root} position="0 0 -40" scale="0.8 0.8 0.8">
-				{/* rifle model */}
-				<lume-fbx-model src="/gun.fbx" rotation="0 -90 0" scale="0.2 0.2 0.2"></lume-fbx-model>
-
-				<lume-element3d position="0 -105 -260">
-					{/* muzzle flash */}
-					<lume-sphere
-						ref={this.explosion}
-						visible="false"
-						has="basic-material"
-						opacity="0.5"
-						size="100 100 100"
-						color="yellow"
-						mount-point="0.5 0.5 1"
-					></lume-sphere>
-
-					{/* bullet tracer */}
-					<lume-box
-						ref={this.tracer}
-						visible="false"
-						has="basic-material"
-						opacity="0.6"
-						size="8 8 8000"
-						color="white"
-						mount-point="0.5 0.5 1"
-					></lume-box>
-				</lume-element3d>
-
-				<audio ref={this.gunshot} src="/gunshot.mp3"></audio>
+				{/* bullet tracer */}
+				<lume-box
+					ref={this.tracer}
+					visible="false"
+					has="basic-material"
+					opacity="0.6"
+					size="8 8 8000"
+					color="white"
+					mount-point="0.5 0.5 1"
+				></lume-box>
 			</lume-element3d>
-		)
-	}
+
+			<audio ref={this.gunshot} src="/gunshot.mp3"></audio>
+		</lume-element3d>
+	)
 }
