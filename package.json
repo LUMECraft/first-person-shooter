@@ -17,11 +17,12 @@
 		"url": "git+ssh://git@github.com/LUMECraft/first-person-shooter.git"
 	},
 	"scripts": {
-		"start": "npm run _meteor",
+		"start": "npm run build && npm run _meteor",
 		"build": "lume build",
 		"dev:lume": "lume dev",
 		"dev": "npm run _meteor",
-		"_meteor": "meteor --exclude-archs \"web.browser.legacy, web.cordova\""
+		"_meteor": "meteor --exclude-archs \"web.browser.legacy, web.cordova\"",
+		"deploy": "git push git@github.com:lumechef/lumecraft-first-person-shooter.git main"
 	},
 	"dependency-notes": [
 		"three: The commit for the 'three' lib is from my fork's fix-ray-intersection-without-material branch"
