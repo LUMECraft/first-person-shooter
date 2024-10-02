@@ -133,7 +133,7 @@ class App {
 
 		createEffect(() => {
 			// Assume bullet hits only the first person it reaches.
-			const unluckyPlayerId = this.playerElements.get().get(this.intersectedElements[0])
+			const unluckyPlayerId = this.playerElements.get().get(this.intersectedElements[0]!)
 			if (!unluckyPlayerId) return
 			Meteor.call('hit', unluckyPlayerId)
 		})

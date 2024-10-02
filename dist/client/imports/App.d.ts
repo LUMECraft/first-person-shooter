@@ -25,7 +25,7 @@ export declare class App {
         ry: number;
         crouch: boolean;
     }) => void, clear: () => void];
-    camera: import("classy-solid").SignalFunction<FirstPersonCamera | undefined>;
+    camera: import("lume").SignalFunction<FirstPersonCamera | undefined>;
     template: () => import("solid-js").JSX.Element;
 }
 //# sourceMappingURL=App.d.ts.map

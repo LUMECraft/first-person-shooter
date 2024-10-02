@@ -1,11 +1,3 @@
 {
-	"extends": "./node_modules/@lume/cli/config/ts.config.json",
-	"compilerOptions": {
-		// "declaration": false,
-		// "rootDir": "./",
-		"jsxImportSource": "@lume/element",
-		"jsx": "preserve"
-	},
-
-	"include": ["src/**/*.ts", "src/**/*.tsx"]
+	"extends": "./node_modules/@lume/cli/config/ts.config.json"
 }

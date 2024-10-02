@@ -109,7 +109,7 @@ const promises = []
 for (let i = 0; i < 30; i += 1) {
 	promises.push(
 		mapItems.insertAsync({
-			type: mapItemTypes[Math.round((mapItemTypes.length - 1) * Math.random())],
+			type: mapItemTypes[Math.round((mapItemTypes.length - 1) * Math.random())]!,
 			x: playArea * Math.random() - playArea / 2,
 			z: playArea * Math.random() - playArea / 2,
 		}),

@@ -123,9 +123,7 @@ let FirstPersonCamera = (() => {
         template = (props) => (<lume-element3d ref={this.root} rotation={new XYZNumberValues([0, this.camRotation.y])} position={new XYZNumberValues([this.camPosition.x, this.camPosition.y, this.camPosition.z])} use:shadow={<>
 					<slot></slot>
 
-					<lume-perspective-camera ref={this.camera} 
-            // @ts-expect-error attribute type is added in newer lume
-            active rotation={new XYZNumberValues([this.camRotation.x])} far="200000" zoom={1}>
+					<lume-perspective-camera ref={this.camera} active rotation={new XYZNumberValues([this.camRotation.x])} far="200000" zoom={1}>
 						<slot name="camera-child"></slot>
 					</lume-perspective-camera>
 

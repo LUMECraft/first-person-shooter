@@ -66,7 +66,6 @@ class FirstPersonCamera {
 
 					<lume-perspective-camera
 						ref={this.camera}
-						// @ts-expect-error attribute type is added in newer lume
 						active
 						rotation={new XYZNumberValues([this.camRotation.x])}
 						far="200000"

@@ -24,10 +24,6 @@
 		"_meteor": "meteor --exclude-archs \"web.browser.legacy, web.cordova\"",
 		"deploy": "git push git@github.com:lumechef/lumecraft-first-person-shooter.git main"
 	},
-	"dependency-notes": [
-		"three: The commit for the 'three' lib is from my fork's fix-ray-intersection-without-material branch"
-	],
-	"solid-js": ">=1.0.0 <1.5.0",
 	"dependencies": {
 		"@babel/runtime": "^7.25.6",
 		"@lume/element": "^0.13.0",
@@ -40,7 +36,7 @@
 		"lowclass": "^8.0.0",
 		"lume": "^0.3.0-alpha.43",
 		"meteor-node-stubs": "^1.0.0",
-		"solid-js": "1.8.x",
+		"solid-js": "^1.0.0",
 		"three": ">=0.139.0"
 	},
 	"devDependencies": {
@@ -48,7 +44,7 @@
 		"@babel/plugin-proposal-class-properties": "^7.18.6",
 		"@babel/plugin-transform-class-static-block": "^7.24.7",
 		"@babel/runtime": "^7.25.6",
-		"@lume/cli": "^0.13.0",
+		"@lume/cli": "^0.14.0",
 		"@types/lodash.throttle": "^4.1.6",
 		"@types/meteor": "^2.9.8",
 		"babel-preset-solid": "^1.9.0",
