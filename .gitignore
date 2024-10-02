@@ -1,9 +1,4 @@
 node_modules
-dist/
-
-# TODO we can statically serve docs from here.
-# How to integrate Meteor functionality into the static site?
-public/docs
 
 # editor files
 .vscode/

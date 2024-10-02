@@ -1,0 +1,1 @@
+{"version":3,"file":"mapItems.d.ts","sourceRoot":"","sources":["../../../src/imports/collections/mapItems.ts"],"names":[],"mappings":"AAAA,eAAO,MAAM,QAAQ,oCAA4C,CAAA;AAEjE,MAAM,WAAW,OAAO;IACvB,IAAI,EAAE,MAAM,GAAG,UAAU,GAAG,OAAO,GAAG,OAAO,GAAG,QAAQ,CAAA;IACxD,CAAC,EAAE,MAAM,CAAA;IACT,CAAC,EAAE,MAAM,CAAA;CACT"}
